@@ -10,15 +10,12 @@
 #include <string.h>
 #include <pthread.h>
 #include <netinet/tcp.h>
-#include <event2/event_struct.h>
-#include "event2/event.h"
-//#include "util-internal.h"
 #include "listen_node.h"
 
 extern "C" {
 #include "log4c.h"
 }
-struct event_base *base = NULL;
+
 log4c_category_t* trace_cat = NULL;
 log4c_category_t* info_cat = NULL;
 log4c_category_t* mycat = NULL;
@@ -118,7 +115,7 @@ int create_new_socket(int set_opt)
 	return fd;
 }
 
-int add_timer(struct timeval t, struct event *event_timer, void *arg)
+int add_timer(struct timeval t, void *arg)
 {
 	return (0);
 	// if (!event_timer) {
@@ -134,22 +131,6 @@ int add_timer(struct timeval t, struct event *event_timer, void *arg)
 	// }
 
 	// return evtimer_add(event_timer, &t);
-}
-int add_signal(int signum, struct event *event, event_callback_fn callback)
-{
-	return (0);
-	// if (!event) {
-	// 	event = evsignal_new(base, signum, callback, NULL);
-	// 	if (!event) {
-	// 		LOG_ERR("%s %d: evsignal_new failed[%d]", __FUNCTION__, __LINE__, errno);					
-	// 		return (-1);
-	// 	}
-	// 	event->ev_arg = event;
-	// } else {
-	// 	evsignal_assign(event, base, signum, event->ev_callback, NULL);
-	// }
-
-	// return evsignal_add(event, NULL);
 }
 
 static void cb_send_func(aeEventLoop *el, int fd, void *privdata, int mask)

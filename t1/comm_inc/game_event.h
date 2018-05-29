@@ -3,9 +3,6 @@
 #include <errno.h>
 #include <stdlib.h>
 #include "listen_node.h"
-#include "event2/event.h"
-#include "event2/event_compat.h"
-//#include "event-internal.h"
 
 extern "C" {
 #include "log4c.h"
@@ -38,14 +35,7 @@ extern "C" {
 //#define LOG_DEBUG(fmt, arg...) 			
 #endif
 
-extern struct event_base *base;
 extern log4c_category_t* mycat;
-
-#define ev_pri ev_evcallback.evcb_pri
-#define ev_flags ev_evcallback.evcb_flags
-#define ev_closure ev_evcallback.evcb_closure
-#define ev_callback ev_evcallback.evcb_cb_union.evcb_callback
-#define ev_arg ev_evcallback.evcb_arg
 
 int game_event_init();
 
@@ -56,8 +46,7 @@ int game_add_connect_event(struct sockaddr *sa, int socklen, conn_node_base *cli
 
 void remove_listen_callback_event(int listen_fd, conn_node_base *client);
 int create_new_socket(int set_opt);
-int add_timer(struct timeval t, struct event *event_timer, void *arg);
-int add_signal(int signum, struct event *event, event_callback_fn callback);
+int add_timer(struct timeval t, void *arg);
 
 void init_mycat();
 void change_mycat();
