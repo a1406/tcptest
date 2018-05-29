@@ -1,7 +1,7 @@
 #include "network.h"
 
-#define ADDR "192.168.1.201"
-#define CLIENT_NUM 500
+#define ADDR "127.0.0.1"
+#define CLIENT_NUM 1
 #define SEND_NUM  200000
 
 static char global_send_buf[256];

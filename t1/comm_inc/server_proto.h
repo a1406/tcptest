@@ -265,38 +265,6 @@ typedef struct proto_enter_game_req
     uint32_t   reconnect;
 } PROTO_ENTER_GAME_REQ;
 
-typedef struct proto_enter_game_resp
-{
-    PROTO_HEAD head;
-    uint8_t    reconnect;
-    uint8_t    job;
-    char       name[MAX_PLAYER_NAME_LEN];
-    uint16_t   lv;
-    uint64_t   player_id;
-    uint8_t    avata_id;
-    uint32_t   platform;
-    uint32_t   ad_channel;
-    uint32_t   plug;
-    uint32_t   create_time;
-    uint32_t   logout_time;
-    char       open_id[50];
-    char       channel[50];
-    uint64_t   chengjie_cd;
-    uint32_t   guild_id;
-    uint32_t   guild_office;	
-    uint32_t   marry_statu;	
-    uint32_t   marry_type;	
-    uint64_t   marry_period;	
-    uint16_t   data_size;  //数据库blob最大64K
-    uint8_t    data[0];
-} PROTO_ENTER_GAME_RESP;
-
-typedef struct player_rename_db_answer
-{
-    PROTO_HEAD head;
-    uint32_t   result;
-    char       name[MAX_PLAYER_NAME_LEN];
-} PLAYER_RENAME_DB_ANSWER;
 
 typedef struct show_item_to_itemsrv
 {
@@ -443,15 +411,6 @@ struct guild_player_data
 {
     uint64_t player_id;
 };
-struct ProtoGuildInfo
-{
-    uint32_t          guild_id;
-    char              name[MAX_GUILD_NAME_LEN + 1];  //帮名
-    uint32_t          zhenying;                      //帮派阵营
-	uint32_t icon; //图标
-    uint64_t          master_id;                     //帮主ID
-    guild_player_data player_data[MAX_GUILD_MEMBER_NUM];
-};
 
 struct ProtoGuildSkill
 {
@@ -459,11 +418,6 @@ struct ProtoGuildSkill
     uint32_t skill_lv;
 };
 
-typedef struct proto_sync_guild_skill
-{
-    PROTO_HEAD      head;
-    ProtoGuildSkill skills[MAX_GUILD_SKILL_NUM];
-} PROTO_SYNC_GUILD_SKILL;
 
 typedef struct proto_sync_guild_info
 {
@@ -479,27 +433,6 @@ typedef struct proto_sync_guild_donation
     uint32_t change_val;  //变化值
 } PROTO_SYNC_GUILD_DONATION;
 
-typedef struct proto_sync_all_guild
-{
-    PROTO_HEAD     head;
-    uint32_t       guild_num;
-    ProtoGuildInfo guilds[0];
-} PROTO_SYNC_ALL_GUILD;
-
-typedef struct proto_sync_guild_rename
-{
-    uint32_t guild_id;
-    char     name[MAX_GUILD_NAME_LEN + 1];  //帮名
-    uint32_t member_num;
-    uint64_t member_ids[MAX_GUILD_MEMBER_NUM];
-} PROTO_SYNC_GUILD_RENAME;
-
-typedef struct proto_friend_recommend
-{
-    PROTO_HEAD head;
-    uint32_t   player_num;
-    uint64_t   player_id[MAX_FRIEND_RECOMMEND_PLAYER];
-} PROTO_FRIEND_RECOMMEND;
 
 typedef struct proto_cost_friend_gift_req
 {
@@ -530,11 +463,6 @@ struct ProtoFriend
     uint32_t closeness;
 };
 
-typedef struct proto_friend_sync_info
-{
-    PROTO_HEAD  head;
-    ProtoFriend contacts[MAX_FRIEND_CONTACT_NUM];
-} PROTO_FRIEND_SYNC_INFO;
 
 struct ProtoEnemy
 {
@@ -542,17 +470,6 @@ struct ProtoEnemy
     uint32_t track_time;
 };
 
-typedef struct proto_friend_sync_enemy
-{
-    ProtoEnemy enemies[MAX_FRIEND_ENEMY_NUM];
-} PROTO_FRIEND_SYNC_ENEMY;
-
-typedef struct proto_friend_sync_rename
-{
-    PROTO_HEAD head;
-    char       old_name[MAX_PLAYER_NAME_LEN + 1];
-    char       new_name[MAX_PLAYER_NAME_LEN + 1];
-} PROTO_FRIEND_SYNC_RENAME;
 
 typedef struct friend_track_request
 {
@@ -588,22 +505,6 @@ typedef struct proto_guild_ruqin
     uint32_t   level;
 } PROTO_HEAD_RUQIN;
 
-//同个帮会的成员的帮战奖励
-typedef struct proto_guild_battle_reward
-{
-    PROTO_HEAD head;
-    uint32_t   activity_id;
-    uint32_t   guild_id;
-    uint32_t   player_num;                          //奖励人数
-    uint64_t   player_id[MAX_GUILD_MEMBER_NUM];     //奖励玩家ID
-    uint64_t   team_id[MAX_GUILD_MEMBER_NUM];       //玩家队伍ID
-    uint32_t   result[MAX_GUILD_MEMBER_NUM];        //战斗结果
-    uint32_t   score[MAX_GUILD_MEMBER_NUM];         //奖励积分
-    uint32_t   treasure[MAX_GUILD_MEMBER_NUM];      //奖励资金
-    uint32_t   donation[MAX_GUILD_MEMBER_NUM];      //奖励帮贡
-    uint32_t   broadcast_num;                       //广播人数
-    uint64_t   broadcast_id[MAX_GUILD_MEMBER_NUM];  //广播玩家ID
-} PROTO_GUILD_BATTLE_REWARD;
 
 typedef struct proto_guild_battle_rank
 {
@@ -638,10 +539,6 @@ struct ProtoRank
     uint32_t score;  //排行榜积分
 };
 
-typedef struct proto_sync_rank
-{
-    ProtoRank ranks[MAX_RANK_TYPE];
-} PROTO_SYNC_RANK;
 
 struct ProtoRankPlayer
 {
@@ -676,16 +573,6 @@ typedef struct doufachang_load_player_request
     uint64_t player_id;
     uint64_t target_id;
 } DOUFACHANG_LOAD_PLAYER_REQUEST;
-typedef struct doufachang_load_player_answer
-{
-    uint64_t player_id;
-    uint64_t target_id;
-    char     name[MAX_PLAYER_NAME_LEN];
-    uint16_t lv;
-    uint8_t  job;
-    uint16_t data_size;  //数据库blob最大64K
-    uint8_t  data[0];
-} DOUFACHANG_LOAD_PLAYER_ANSWER;
 
 typedef struct doufachang_buy_challenge_request
 {
@@ -718,15 +605,6 @@ typedef struct doufachang_sync_rank
     uint64_t defencer_rank;
 } DOUFACHANG_SYNC_RANK;
 
-typedef struct trade_on_shelf_request
-{
-    uint32_t         bag_index;
-    uint32_t         num;
-    uint32_t         price;
-    uint32_t         fee;
-    uint32_t         trade_id;
-    EspecialItemInfo especial;
-} TRADE_ON_SHELF_REQUEST;
 
 typedef struct trade_on_shelf_delete_item_request
 {
@@ -744,13 +622,6 @@ typedef struct trade_on_shelf_delete_item_answer
     uint32_t shelf_index;
 } TRADE_ON_SHELF_DELETE_ITEM_ANSWER;
 
-typedef struct trade_off_shelf_add_item_request
-{
-    uint32_t         shelf_index;
-    uint32_t         trade_id;
-    uint32_t         num;
-    EspecialItemInfo especial;
-} TRADE_OFF_SHELF_ADD_ITEM_REQUEST;
 
 typedef struct trade_off_shelf_add_item_answer
 {
@@ -758,15 +629,6 @@ typedef struct trade_off_shelf_add_item_answer
     uint32_t shelf_index;
 } TRADE_OFF_SHELF_ADD_ITEM_ANSWER;
 
-typedef struct trade_re_shelf_change_request
-{
-    uint32_t         shelf_index;
-    uint32_t         num;
-    uint32_t         price;  //前面的都是夹带的参数
-    uint32_t         trade_id;
-    uint32_t         off_num;  //下架数量
-    EspecialItemInfo especial;
-} TRADE_RE_SHELF_CHANGE_REQUEST;
 
 typedef struct trade_re_shelf_change_answer
 {
@@ -776,15 +638,6 @@ typedef struct trade_re_shelf_change_answer
     uint32_t price;  //前面的都是夹带的参数
 } TRADE_RE_SHELF_CHANGE_ANSWER;
 
-typedef struct trade_buy_execute_request
-{
-    uint64_t         seller_id;
-    uint32_t         shelf_index;
-    uint32_t         buy_num;  //前面的都是夹带的参数
-    uint32_t         trade_id;
-    uint32_t         buy_price;
-    EspecialItemInfo especial;
-} TRADE_BUY_EXECUTE_REQUEST;
 
 typedef struct trade_buy_execute_answer
 {
@@ -794,12 +647,6 @@ typedef struct trade_buy_execute_answer
     uint32_t buy_num;  //前面的都是夹带的参数
 } TRADE_BUY_EXECUTE_ANSWER;
 
-typedef struct trade_lot_insert
-{
-    uint32_t lot_id;                           //拍卖品ID
-    uint32_t guild_id;                         //激活的帮会ID
-    uint64_t masters[MAX_AUCTION_MASTER_NUM];  //激活的成员
-} TRADE_LOT_INSERT;
 
 typedef struct trade_bid_check_carry
 {
@@ -864,14 +711,6 @@ struct skill_data
     uint64_t   cd_time;
 };
 
-typedef struct raid_enter_request
-{
-    uint32_t          raid_id;
-    double            attrData[PLAYER_ATTR_MAX];
-    char              name[MAX_PLAYER_NAME_LEN + 1];
-    struct skill_data skill[MAX_MY_SKILL_NUM];
-    uint32_t          skillindex;  //套餐下标
-} RAID_ENTER_REQUEST;
 
 typedef struct attr_changed_request
 {
@@ -890,29 +729,7 @@ typedef struct guild_bonfire_open_answer
 	uint32_t last_begin_time;
 } GUILD_BONFIRE_OPEN_ANSWER;
 
-//同个帮会的成员的篝火奖励
-typedef struct guild_bonfire_reward
-{
-    uint32_t   activity_id;
-    uint32_t   guild_id;
-    uint32_t   player_num;                          //奖励人数
-    uint64_t   player_id[MAX_GUILD_MEMBER_NUM];     //奖励玩家ID
-    uint32_t   treasure[MAX_GUILD_MEMBER_NUM];      //奖励资金
-    uint32_t   donation[MAX_GUILD_MEMBER_NUM];      //奖励帮贡
-    uint32_t   build_board[MAX_GUILD_MEMBER_NUM];   //奖励木材
-} GUILD_BONFIRE_REWARD;
 
-//发红包请求数据到交易服
-typedef struct red_packet_send_data_request
-{
-  uint32_t red_type;  //红包类型 1:世界频道红包 5:帮派频道红包
-  uint32_t guild_type; //如果是帮派频道红包 0:是自己发的 1:是系统发的
-  uint32_t red_coin_type; //红包样式 0:元宝红包 1:银票红包
-  uint32_t money_num; //发红包的金钱数量
-  uint32_t red_num; //发红包个数
-  char player_text[MAX_RED_PACKET_LIU_YAN_LEN]; //玩家留言
-
-} RED_PACKET_SEND_DATA_REQUEST; 
 
 typedef struct red_packet_recive_give_money
 {
