@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdint.h>
+#include <stdlib.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include <string.h>
@@ -12,7 +13,7 @@
 #define ADDR "192.168.1.201"
 #define PORT 2000
 #define CLIENT_NUM 500
-#define SEND_NUM  1000000
+#define SEND_NUM  100000
 
 #define NODE_BLOCK 0x1
 #define NODE_CONNECTED 0x2
@@ -115,7 +116,9 @@ static void disconnect(aeEventLoop *el, CONN_NODE *node)
 	node->flag |= NODE_DISCONNECTING;
 		//ondisconnected();
     if (node->fd > 0)
+	{
         close(node->fd);
+	}
 
 	aeDeleteFileEvent(el, node->fd, AE_READABLE);
 	aeDeleteFileEvent(el, node->fd, AE_WRITABLE);
@@ -149,7 +152,7 @@ static void recv_func(aeEventLoop *el, int fd, void *privdata, int mask)
 	}
 	else if (ret < 0 && errno != EAGAIN)
 	{
-		printf("recv ret[%d] %s\n", ret, buf);
+		printf("recv ret[%d] errno = %d\n", ret, errno);
 		disconnect(el, node);		
 	}
 	else
@@ -172,6 +175,7 @@ static void	check_finished()
 			return;
 	}
 	printf("all finished\n");
+	exit(0);
 }
 
 static void write_func(aeEventLoop *el, int fd, void *privdata, int mask)
@@ -202,7 +206,7 @@ static void write_func(aeEventLoop *el, int fd, void *privdata, int mask)
 		int ret = write(fd, global_send_buf, global_send_len);
 		if (ret <= 0)
 		{
-			printf("write err, ret = %d\n", ret);
+			printf("write err, ret = %d, err = %d\n", ret, errno);
 			return;
 		}
 		len += ret;
