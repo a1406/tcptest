@@ -48,7 +48,7 @@ extern log4c_category_t* mycat;
 #define ev_arg ev_evcallback.evcb_arg
 
 int game_event_init();
-int game_add_listen_event(uint16_t port, listen_node_base *callback, const char *name);
+int game_add_listen_event(uint16_t port, const char *name);
 int game_add_connect_event(struct sockaddr *sa, int socklen, conn_node_base *client);
 
 void remove_listen_callback_event(conn_node_base *client);

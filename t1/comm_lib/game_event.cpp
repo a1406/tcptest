@@ -1,4 +1,5 @@
 #include "game_event.h"
+#include "ae_net.h"
 #include "comm.h"
 #include <stdio.h>
 #include <unistd.h>
@@ -22,7 +23,7 @@ log4c_category_t* trace_cat = NULL;
 log4c_category_t* info_cat = NULL;
 log4c_category_t* mycat = NULL;
 
-static void libevent_log(int severity, const char *msg)
+__attribute__((used)) static void libevent_log(int severity, const char *msg)
 {
 	printf("%s %d %d: %s", __FUNCTION__, __LINE__, severity, msg);
 	log4c_category_log(mycat, severity, msg);
@@ -69,6 +70,11 @@ err:
 
 int game_event_init()
 {
+#ifndef LIBEVENT
+	global_el = aeCreateEventLoop(65536);
+	
+	return (0);
+#else	
 	int ret = 0;
 	struct event_config *config = NULL;
 //	struct event *event_signal1 = NULL;
@@ -134,6 +140,7 @@ fail:
 		base = NULL;
 	}
 	return (ret);
+#endif
 }
 
 //static void cb_signal(evutil_socket_t fd, short events, void *arg)
@@ -326,50 +333,58 @@ fail:
 		evutil_closesocket(new_fd);			
 }
 
-
-int game_add_listen_event(uint16_t port, listen_node_base *callback, const char *name)
+#define MAX_ACCEPTS_PER_CALL 100
+#define NET_IP_STR_LEN 46 /* INET6_ADDRSTRLEN is 46, but we need to be sure */
+static void acceptTcpHandler(aeEventLoop *el, int fd, void *privdata, int mask)
 {
-	struct event *event_accept = &callback->event_accept;
-	int fd = 0;
-	struct sockaddr_in addr;
+    int cport, cfd;
+	int max = MAX_ACCEPTS_PER_CALL;
+    char cip[NET_IP_STR_LEN];
+    UNUSED(el);
+    UNUSED(mask);
+    UNUSED(privdata);
 
-	if (!callback)
-		return (-1);
-	
-	fd = create_new_socket(1);
-	if (fd < 0) {
-		LOG_ERR("%s: create new socket failed[%d]", __FUNCTION__, errno);
-		return (-2);		
-	}
-	evutil_make_listen_socket_reuseable(fd);	
-	memset(&addr, 0, sizeof(addr));
-	addr.sin_family = AF_INET;
-	addr.sin_addr.s_addr = htonl(0);
-	addr.sin_port = htons(port);	
-	if (bind(fd, (struct sockaddr *)&addr, sizeof(addr)) != 0) {
-		LOG_ERR("%s: bind port[%d] failed[%d]", __FUNCTION__, port, errno);
-		return (-10);
-	}
-	if (listen(fd, 128) != 0) {
-		LOG_ERR("%s: listen failed[%d]", __FUNCTION__, errno);
-		return (-20);		
-	}
-	if (0 != event_assign(event_accept, base, fd, EV_READ|EV_PERSIST, cb_listen, (void *)callback)) {
-		LOG_ERR("%s: event_new failed[%d]", __FUNCTION__, errno);
-		goto fail;
-	}
-	event_add(event_accept, NULL);
+    while(max--) {
+        cfd = anetTcpAccept(NULL, fd, cip, sizeof(cip), &cport);
+        if (cfd == ANET_ERR) {
+//            if (errno != EWOULDBLOCK)
+//                serverLog(LL_WARNING,
+//                    "Accepting client connection: %s", server.neterr);
+            return;
+        }
 
-	LOG_INFO("%s: %s fd = %d, port = %d, callback = %p", __FUNCTION__, name, fd, port, callback);
-	return (0);
-fail:
-	if (fd > 0) {
-		evutil_closesocket(fd);				
+		anetSetBlock(cfd, 0);
+		CONN_NODE *node = (CONN_NODE *)malloc(sizeof(CONN_NODE));
+		node->fd = cfd;
+		node->flag = NODE_CONNECTED;
+		node->send_buffer_begin_pos = 0;
+		node->send_buffer_end_pos = 0;
+		node->on_write = send_func;
+		node->pos_begin = node->pos_end = 0;
+		node->max_buf_len = 10 * 1024;
+		node->buf = (uint8_t *)malloc(node->max_buf_len);
+		all_clients[cfd] = node;
+		aeCreateFileEvent(el, node->fd, AE_READABLE, recv_func, node);
+
+		printf("fd %d accept from %s\n", node->fd, cip);
+//        serverLog(LL_VERBOSE,"Accepted %s:%d", cip, cport);
+//        acceptCommonHandler(cfd,0,cip);
+		
+    }
+}
+
+int game_add_listen_event(uint16_t port, const char *name)
+{
+	int fd = anetTcpServer(NULL, port, NULL, 511);
+	if (aeCreateFileEvent(global_el, fd, AE_READABLE, acceptTcpHandler, NULL) == AE_ERR)
+	{
+		LOG_ERR("Unrecoverable error creating server.ipfd file event.\n");
+		close(fd);
+		return -1;
 	}
-	if (event_accept) {
-		event_del(event_accept);				
-	}
-	return (-1);
+
+	LOG_INFO("%s: %s fd = %d, port = %d", __FUNCTION__, name, fd, port);
+	return (fd);
 }
 
 int game_add_connect_event(struct sockaddr *sa, int socklen, conn_node_base *client)

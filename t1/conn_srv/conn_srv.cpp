@@ -181,8 +181,8 @@ int main(int argc, char **argv)
 	ret = event_base_loop(base, 0);
 	LOG_INFO("event_base_loop stoped[%d]", ret);	
 
-	struct timeval tv;
-	event_base_gettimeofday_cached(base, &tv);
+//	struct timeval tv;
+//	event_base_gettimeofday_cached(base, &tv);
 
 done:
 	LOG_INFO("conn_srv stoped[%d]", ret);
