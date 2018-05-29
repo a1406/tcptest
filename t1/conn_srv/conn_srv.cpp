@@ -15,7 +15,6 @@
 #include <pthread.h>
 #include "game_event.h"
 #include "time_helper.h"
-#include "listen_node_client.h"
 #include "oper_config.h"
 #include "deamon.h"
 #include <evhttp.h>
@@ -102,9 +101,6 @@ void cb_connsrv_timer(evutil_socket_t, short, void* /*arg*/)
 // 	}
 }
 
-static listen_node_client client_listener;   //客户端连接
-uint32_t sg_server_id;
-
 int main(int argc, char **argv)
 {
 	int ret = 0;
@@ -161,9 +157,9 @@ int main(int argc, char **argv)
 		goto done;
 	}
 
-	ret = game_add_listen_event(port, &client_listener, "client");
-	if (ret != 0)
-		goto done;
+// 	ret = game_add_listen_event(port, &client_listener, "client");
+// 	if (ret != 0)
+// 		goto done;
 
 	add_signal(SIGUSR1, NULL, cb_signal);
 	add_signal(SIGUSR2, NULL, cb_signal2);		

@@ -296,7 +296,7 @@ int conn_node_client::send_one_msg(PROTO_HEAD *head, uint8_t force) {
 		ext_data.open_id = open_id;
 		ext_data.player_id = player_id;
 		ext_data.fd = fd;
-		ext_data.port = sock.sin_port;
+		ext_data.port = port;
 		add_extern_data(head1, &ext_data);
 		transfer_to_dumpserver(head1);
 	}
@@ -429,7 +429,7 @@ int conn_node_client::add_map_open_id_nodes(conn_node_client *client)
 conn_node_client *conn_node_client::get_nodes_by_fd(evutil_socket_t fd, uint16_t port)
 {
 	std::map<evutil_socket_t, conn_node_client *>::iterator it = map_fd_nodes.find(fd);
-	if (it != map_fd_nodes.end() && it->second->sock.sin_port == port)
+	if (it != map_fd_nodes.end() && it->second->port == port)
 		return it->second;
 	return NULL;
 }

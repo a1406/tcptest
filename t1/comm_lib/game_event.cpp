@@ -23,124 +23,14 @@ log4c_category_t* trace_cat = NULL;
 log4c_category_t* info_cat = NULL;
 log4c_category_t* mycat = NULL;
 
-__attribute__((used)) static void libevent_log(int severity, const char *msg)
-{
-	printf("%s %d %d: %s", __FUNCTION__, __LINE__, severity, msg);
-	log4c_category_log(mycat, severity, msg);
-}
-
-#define EVUTIL_ERR_CONNECT_RETRIABLE(e)			\
-	((e) == EINTR || (e) == EINPROGRESS)
-#define EVUTIL_ERR_CONNECT_REFUSED(e)					\
-	((e) == ECONNREFUSED)
-
-
-static int
-evutil_socket_connect_(evutil_socket_t *fd_ptr, const struct sockaddr *sa, int socklen)
-{
-	int made_fd = 0;
-
-	if (*fd_ptr < 0) {
-		if ((*fd_ptr = socket(sa->sa_family, SOCK_STREAM, 0)) < 0)
-			goto err;
-		made_fd = 1;
-		if (evutil_make_socket_nonblocking(*fd_ptr) < 0) {
-			goto err;
-		}
-	}
-
-	if (connect(*fd_ptr, sa, socklen) < 0) {
-		int e = evutil_socket_geterror(*fd_ptr);
-		if (EVUTIL_ERR_CONNECT_RETRIABLE(e))
-			return 0;
-		if (EVUTIL_ERR_CONNECT_REFUSED(e))
-			return 2;
-		goto err;
-	} else {
-		return 1;
-	}
-
-err:
-	if (made_fd) {
-		evutil_closesocket(*fd_ptr);
-		*fd_ptr = -1;
-	}
-	return -1;
-}
+std::map<int, get_conn_node> listen_get_conn_maps;
+std::map<int, del_conn_node> listen_del_conn_maps;
 
 int game_event_init()
 {
-#ifndef LIBEVENT
 	global_el = aeCreateEventLoop(65536);
 	
 	return (0);
-#else	
-	int ret = 0;
-	struct event_config *config = NULL;
-//	struct event *event_signal1 = NULL;
-//	struct event *event_signal2 = NULL;	
-	
-	event_set_log_callback(libevent_log);
-
-	config = event_config_new();
-	if (!config)
-	{
-		LOG_ERR("%s %d: event_config_new failed[%d]", __FUNCTION__, __LINE__, errno);
-		ret = -10;
-		goto fail;
-	}
-	event_config_require_features(config, /*EV_FEATURE_ET |*/ EV_FEATURE_O1 /*| EV_FEATURE_FDS*/);
-	event_config_set_flag(config, EVENT_BASE_FLAG_NOLOCK | EVENT_BASE_FLAG_EPOLL_USE_CHANGELIST);
-	base = event_base_new_with_config(config);
-	if (!base)
-	{
-		LOG_ERR("%s %d: event_base_new_with_config failed[%d]", __FUNCTION__, __LINE__, errno);
-		ret = -20;
-		goto fail;
-	}
-/*
-	event_signal1 = evsignal_new(base, SIGUSR1, cb_signal, NULL);
-	if (!event_signal1) {
-		log4c_category_log(mycat, LOG4C_PRIORITY_ERROR, "%s %d: evsignal_new failed[%d]", __FUNCTION__, __LINE__, errno);
-		ret = -30;
-		goto fail;
-	}
-	event_signal2 = evsignal_new(base, SIGUSR2, cb_signal, NULL);
-	if (!event_signal2) {
-		log4c_category_log(mycat, LOG4C_PRIORITY_ERROR, "%s %d: evsignal_new failed[%d]", __FUNCTION__, __LINE__, errno);
-		ret = -30;
-		goto fail;
-	}
-	
-//	struct event event_signal, event_timer;
-//	evsignal_assign(&event_signal, base, SIGUSR1, cb_signal, NULL);
-//	evtimer_assign(&event_timer, base, cb_timer, NULL);
-	evsignal_add(event_signal1, NULL);
-	evsignal_add(event_signal2, NULL);	
-*/	
-	return (0);
-	
-fail:
-/*	
-	if (event_signal1) {
-		event_free(event_signal1);
-		event_signal1 = NULL;
-	}
-	if (event_signal2) {
-		event_free(event_signal2);
-		event_signal2 = NULL;
-	}
-*/	
-	if (config) {
-		event_config_free(config);
-		config = NULL;
-	}
-	if (base) {
-		event_base_free(base);
-		base = NULL;
-	}
-	return (ret);
-#endif
 }
 
 //static void cb_signal(evutil_socket_t fd, short events, void *arg)
@@ -155,24 +45,23 @@ static void cb_timer(evutil_socket_t fd, short events, void *arg)
 		event_free((event *)arg);
 }
 
-void remove_listen_callback_event(conn_node_base *client)
+void remove_listen_callback_event(conn_node_base *node)
 {
-	if (!client)
-		return;
-	if (client->fd == 0) {
-		LOG_ERR("%s: fd is already closed", __FUNCTION__);
-		return;
-	}
-	LOG_DEBUG("%s: close connect from fd [%p]%u", __FUNCTION__, client, client->fd);
-	
-	event_del(&client->event_recv);
-	if (client->get_write_event()) {
-		event_del(client->get_write_event());
-	}
-	
+	assert(listen_del_conn_maps.find(node->fd) != listen_del_conn_maps.end());
+	del_conn_node callback = listen_del_conn_maps[node->fd];
 
-	evutil_closesocket(client->fd);
-	delete(client);
+	callback(node);
+	
+	node->flag |= NODE_DISCONNECTING;
+		//ondisconnected();
+    if (node->fd > 0)
+	{
+        close(node->fd);
+	}
+
+	aeDeleteFileEvent(global_el, node->fd, AE_READABLE);
+	aeDeleteFileEvent(global_el, node->fd, AE_WRITABLE);
+	node->fd = 0;
 }
 
 static int game_setnagleoff(int fd)
@@ -261,10 +150,14 @@ int add_signal(int signum, struct event *event, event_callback_fn callback)
 	return evsignal_add(event, NULL);
 }
 
-static void cb_recv(evutil_socket_t fd, short events, void *arg)
+static void cb_send_func(aeEventLoop *el, int fd, void *privdata, int mask)
 {
-	assert(arg);
-	conn_node_base *client = (conn_node_base *)arg;
+}
+
+static void cb_recv_func(aeEventLoop *el, int fd, void *privdata, int mask)
+{
+	assert(privdata);
+	conn_node_base *client = (conn_node_base *)privdata;
 
 	game_cork_on(fd);
 	int ret = client->recv_func(fd);
@@ -273,64 +166,7 @@ static void cb_recv(evutil_socket_t fd, short events, void *arg)
 	if (ret >= 0)
 		return;
 
-//	if (unlikely(events == EV_WRITE))
-//		return;
-	
 	remove_listen_callback_event(client);	
-}
-
-static void cb_listen(evutil_socket_t fd, short events, void *arg)
-{
-	assert(arg);
-	conn_node_base *client = NULL;
-	int new_fd = 0;
-	struct sockaddr_in ss;
-	size_t socklen = sizeof(ss);
-	listen_node_base *callback = (listen_node_base *)arg;
-	if (callback->listen_pre_func() < 0) {
-		LOG_INFO("%s: connect pre refused", __FUNCTION__);
-		new_fd = accept(fd, (struct sockaddr*)&ss, (socklen_t *)&socklen);		
-		goto fail;
-	}
-	
-	new_fd = accept(fd, (struct sockaddr*)&ss, (socklen_t *)&socklen);
-	if (new_fd < 0) {
-		LOG_ERR("%s %d: accept failed[%d]", __FUNCTION__, __LINE__, errno);
-		goto fail;
-	}
-	LOG_INFO("%s %d: fd = %d, new_fd = %d, ip = %x, port = %u, events = %d, arg = %p",
-		__FUNCTION__, __LINE__, fd, new_fd, ss.sin_addr.s_addr, htons(ss.sin_port), events, arg);
-	
-	game_set_socket_opt(new_fd);	
-
-	client = callback->get_conn_node(new_fd);
-	if (!client) {
-		LOG_ERR("%s %d: cb_get_client_map with fd[%u] new_fd[%u] failed", __FUNCTION__, __LINE__, fd, new_fd);		
-		goto fail;
-	}
-	client->sock = ss;
-	
-	if (0 != event_assign(&client->event_recv, base, new_fd, EV_READ | EV_PERSIST, cb_recv, client)) {
-		LOG_ERR("%s %d: event_assign failed[%d]", __FUNCTION__, __LINE__, errno);
-		goto fail;
-	}
-
-	if (event_add(&client->event_recv, NULL) != 0) {
-		LOG_ERR("%s %d: event_assign failed[%d]", __FUNCTION__, __LINE__, errno);
-		goto fail;			
-	}
-
-	if (callback->listen_after_func(new_fd) < 0) {
-		LOG_INFO("%s: connect after refused", __FUNCTION__);
-		goto fail;
-	}
-	return;
-fail:
-	if (client) {
-		remove_listen_callback_event(client);
-	}
-	if (new_fd > 0)
-		evutil_closesocket(new_fd);			
 }
 
 #define MAX_ACCEPTS_PER_CALL 100
@@ -344,6 +180,9 @@ static void acceptTcpHandler(aeEventLoop *el, int fd, void *privdata, int mask)
     UNUSED(mask);
     UNUSED(privdata);
 
+	assert(listen_get_conn_maps.find(fd) != listen_get_conn_maps.end());
+	get_conn_node callback = listen_get_conn_maps[fd];
+
     while(max--) {
         cfd = anetTcpAccept(NULL, fd, cip, sizeof(cip), &cport);
         if (cfd == ANET_ERR) {
@@ -354,27 +193,32 @@ static void acceptTcpHandler(aeEventLoop *el, int fd, void *privdata, int mask)
         }
 
 		anetSetBlock(cfd, 0);
-		CONN_NODE *node = (CONN_NODE *)malloc(sizeof(CONN_NODE));
+		conn_node_base *node = callback();
+		if (!node)
+		{
+			close(cfd);
+			continue;
+		}
 		node->fd = cfd;
+		node->port = cport;
 		node->flag = NODE_CONNECTED;
 		node->send_buffer_begin_pos = 0;
 		node->send_buffer_end_pos = 0;
-		node->on_write = send_func;
+		node->on_write = cb_send_func;
 		node->pos_begin = node->pos_end = 0;
-		node->max_buf_len = 10 * 1024;
-		node->buf = (uint8_t *)malloc(node->max_buf_len);
-		all_clients[cfd] = node;
-		aeCreateFileEvent(el, node->fd, AE_READABLE, recv_func, node);
+		// node->max_buf_len = 10 * 1024;
+		// node->buf = (uint8_t *)malloc(node->max_buf_len);
+		// all_clients[cfd] = node;
+		aeCreateFileEvent(el, node->fd, AE_READABLE, cb_recv_func, node);
 
-		printf("fd %d accept from %s\n", node->fd, cip);
-//        serverLog(LL_VERBOSE,"Accepted %s:%d", cip, cport);
-//        acceptCommonHandler(cfd,0,cip);
-		
+		LOG_DEBUG("fd %d accept from %s\n", node->fd, cip);
     }
 }
 
-int game_add_listen_event(uint16_t port, const char *name)
+int game_add_listen_event(uint16_t port, get_conn_node cb1, del_conn_node cb2, const char *name)
 {
+	assert(cb1);
+	assert(cb2);	
 	int fd = anetTcpServer(NULL, port, NULL, 511);
 	if (aeCreateFileEvent(global_el, fd, AE_READABLE, acceptTcpHandler, NULL) == AE_ERR)
 	{
@@ -382,6 +226,8 @@ int game_add_listen_event(uint16_t port, const char *name)
 		close(fd);
 		return -1;
 	}
+	listen_get_conn_maps[fd] = cb1;
+	listen_del_conn_maps[fd] = cb2;	
 
 	LOG_INFO("%s: %s fd = %d, port = %d", __FUNCTION__, name, fd, port);
 	return (fd);
@@ -389,44 +235,8 @@ int game_add_listen_event(uint16_t port, const char *name)
 
 int game_add_connect_event(struct sockaddr *sa, int socklen, conn_node_base *client)
 {
-	int ret;
-	struct event *event_conn = &client->event_recv;
-	int fd = 0;
-	char buf[128];
-	struct sockaddr_in *sin = (struct sockaddr_in *)sa;
-	evutil_inet_ntop(AF_INET, &sin->sin_addr, buf, sizeof(buf));
-	
-	fd = create_new_socket(0);
-	if (0 != event_assign(event_conn, base, fd, EV_READ|EV_PERSIST, cb_recv, client)) {
-		LOG_ERR("%s %d: event_new failed[%d]", __FUNCTION__, __LINE__, errno);				
-		goto fail;
-	}
-	event_add(event_conn, NULL);
-	
-	ret = evutil_socket_connect_(&fd, sa, socklen);
-	if (ret != 1) {
-		if (ret > 0)
-			ret = -ret;
-		if (ret == 0)
-			ret = -1;
-		LOG_ERR("%s %d: evutil_socket_connect failed[%d][%d]", __FUNCTION__, __LINE__, errno, ret);		
-		goto fail;
-	}
-
-	game_set_socket_opt(fd);
-	client->fd = fd;
-
-	LOG_INFO("%s: connect[%s][%u] fd = %d", __FUNCTION__, buf, htons(sin->sin_port), fd);
-	
-	return (fd);
-fail:
-	if (fd > 0) {
-		evutil_closesocket(fd);		
-	}
-	if (event_conn) {
-		event_del(event_conn);		
-	}
-	return (-1);	
+	// TODO: 
+	return (0);
 }
 
 static const char* dated_r_format(

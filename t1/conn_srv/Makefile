@@ -179,33 +179,6 @@ conn_srv.cpp.s:
 	cd /home/jack/gitroot/tcptest/t1 && $(MAKE) -f conn_srv/CMakeFiles/conn_srv.dir/build.make conn_srv/CMakeFiles/conn_srv.dir/conn_srv.cpp.s
 .PHONY : conn_srv.cpp.s
 
-listen_node_client.o: listen_node_client.cpp.o
-
-.PHONY : listen_node_client.o
-
-# target to build an object file
-listen_node_client.cpp.o:
-	cd /home/jack/gitroot/tcptest/t1 && $(MAKE) -f conn_srv/CMakeFiles/conn_srv.dir/build.make conn_srv/CMakeFiles/conn_srv.dir/listen_node_client.cpp.o
-.PHONY : listen_node_client.cpp.o
-
-listen_node_client.i: listen_node_client.cpp.i
-
-.PHONY : listen_node_client.i
-
-# target to preprocess a source file
-listen_node_client.cpp.i:
-	cd /home/jack/gitroot/tcptest/t1 && $(MAKE) -f conn_srv/CMakeFiles/conn_srv.dir/build.make conn_srv/CMakeFiles/conn_srv.dir/listen_node_client.cpp.i
-.PHONY : listen_node_client.cpp.i
-
-listen_node_client.s: listen_node_client.cpp.s
-
-.PHONY : listen_node_client.s
-
-# target to generate assembly for a file
-listen_node_client.cpp.s:
-	cd /home/jack/gitroot/tcptest/t1 && $(MAKE) -f conn_srv/CMakeFiles/conn_srv.dir/build.make conn_srv/CMakeFiles/conn_srv.dir/listen_node_client.cpp.s
-.PHONY : listen_node_client.cpp.s
-
 # Help Target
 help:
 	@echo "The following are some of the valid targets for this Makefile:"
@@ -221,9 +194,6 @@ help:
 	@echo "... conn_srv.o"
 	@echo "... conn_srv.i"
 	@echo "... conn_srv.s"
-	@echo "... listen_node_client.o"
-	@echo "... listen_node_client.i"
-	@echo "... listen_node_client.s"
 .PHONY : help
 
 

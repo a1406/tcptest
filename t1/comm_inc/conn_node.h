@@ -2,6 +2,7 @@
 #define _CONN_NODE_H__
 
 #include "server_proto.h"
+#include "ae_net.h"
 #include <assert.h>
 #include <string.h>
 #include <stdint.h>
@@ -175,12 +176,21 @@ public:
 	
 	struct event event_recv;
 	evutil_socket_t fd;
-	struct sockaddr_in sock;
+	uint16_t flag;
+	uint16_t port;
+//	struct sockaddr_in sock;
 	uint32_t pos_begin;	
 	uint32_t pos_end;	
 	uint8_t *buf;//[MAX_BUF_PER_CLIENT + sizeof(EXTERN_DATA)];
 	uint32_t max_buf_len;
 
+	char *send_buffer;
+	int32_t send_buffer_begin_pos;
+	int32_t send_buffer_end_pos;
+	int32_t send_buffer_size;
+
+	aeFileProc *on_write;
+	
 	static inline PROTO_HEAD *get_send_buf(uint16_t msg_id, uint16_t seq)
 	{
 		PROTO_HEAD *head = (PROTO_HEAD *)global_send_buf;
