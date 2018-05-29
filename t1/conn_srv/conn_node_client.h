@@ -12,6 +12,7 @@ public:
 	conn_node_client();
 	virtual ~conn_node_client();
 
+	virtual int get_listen_fd();
 	virtual int recv_func(evutil_socket_t fd);
 	virtual int send_one_msg(PROTO_HEAD *head, uint8_t force);
 
@@ -39,6 +40,8 @@ public:
 	uint16_t seq;       //客户端发包的seq号，每次加1
 	uint32_t open_id;
 	uint64_t player_id;
+
+	static int listen_fd;
 
 private:
 	void memmove_data();

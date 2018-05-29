@@ -45,10 +45,10 @@ __attribute_used__ static void cb_timer(evutil_socket_t fd, short events, void *
 		event_free((event *)arg);
 }
 
-void remove_listen_callback_event(conn_node_base *node)
+void remove_listen_callback_event(int listen_fd, conn_node_base *node)
 {
-	assert(listen_del_conn_maps.find(node->fd) != listen_del_conn_maps.end());
-	del_conn_node callback = listen_del_conn_maps[node->fd];
+	assert(listen_del_conn_maps.find(listen_fd) != listen_del_conn_maps.end());
+	del_conn_node callback = listen_del_conn_maps[listen_fd];
 
 	callback(node);
 	
@@ -168,7 +168,7 @@ static void cb_recv_func(aeEventLoop *el, int fd, void *privdata, int mask)
 	if (ret >= 0)
 		return;
 
-	remove_listen_callback_event(client);	
+	remove_listen_callback_event(client->get_listen_fd(), client);	
 }
 
 #define MAX_ACCEPTS_PER_CALL 100
@@ -211,7 +211,7 @@ static void acceptTcpHandler(aeEventLoop *el, int fd, void *privdata, int mask)
 
 		aeCreateFileEvent(el, node->fd, AE_READABLE, cb_recv_func, node);
 
-		LOG_DEBUG("fd %d accept from %s\n", node->fd, cip);
+		LOG_DEBUG("fd %d accept from %s %d", node->fd, cip, cport);
     }
 }
 
@@ -220,6 +220,7 @@ int game_add_listen_event(int port, get_conn_node cb1, del_conn_node cb2, const 
 	assert(cb1);
 	assert(cb2);	
 	int fd = anetTcpServer(NULL, port, NULL, 511);
+	anetSetBlock(fd, 0);
 	if (aeCreateFileEvent(global_el, fd, AE_READABLE, acceptTcpHandler, NULL) == AE_ERR)
 	{
 		LOG_ERR("Unrecoverable error creating server.ipfd file event.\n");

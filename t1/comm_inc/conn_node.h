@@ -170,6 +170,7 @@ public:
 	conn_node_base();
 	virtual ~conn_node_base();
 
+	virtual int get_listen_fd() = 0;
 	virtual int recv_func(evutil_socket_t fd) = 0;
 	virtual int send_one_msg(PROTO_HEAD *head, uint8_t force);	
 	virtual struct event* get_write_event() { return NULL; }

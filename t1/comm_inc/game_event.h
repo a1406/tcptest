@@ -54,7 +54,7 @@ typedef void (*del_conn_node)(conn_node_base *);
 int game_add_listen_event(int port, get_conn_node cb1, del_conn_node cb2, const char *name);
 int game_add_connect_event(struct sockaddr *sa, int socklen, conn_node_base *client);
 
-void remove_listen_callback_event(conn_node_base *client);
+void remove_listen_callback_event(int listen_fd, conn_node_base *client);
 int create_new_socket(int set_opt);
 int add_timer(struct timeval t, struct event *event_timer, void *arg);
 int add_signal(int signum, struct event *event, event_callback_fn callback);

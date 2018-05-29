@@ -109,6 +109,11 @@ void conn_node_client::remove_buflen(int len)
 	return;
 }
 
+int conn_node_client::get_listen_fd()
+{
+	return conn_node_client::listen_fd;
+}
+
 int conn_node_client::recv_func(evutil_socket_t fd)
 {
 	PROTO_HEAD *head;
@@ -344,6 +349,7 @@ int conn_node_client::transfer_to_activitysrv()
 std::map<evutil_socket_t, conn_node_client *> conn_node_client::map_fd_nodes;
 std::map<uint64_t, conn_node_client *> conn_node_client::map_player_id_nodes;
 std::map<uint32_t, conn_node_client *> conn_node_client::map_open_id_nodes;
+int conn_node_client::listen_fd;
 
 conn_node_base *conn_node_client::get_conn_node(int fd)
 {

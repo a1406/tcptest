@@ -160,6 +160,7 @@ int main(int argc, char **argv)
 	ret = game_add_listen_event(port, conn_node_client::get_conn_node, conn_node_client::del_conn_node, "client");
  	if (ret < 0)
  		goto done;
+	conn_node_client::listen_fd = ret;
 
 	add_signal(SIGUSR1, NULL, cb_signal);
 	add_signal(SIGUSR2, NULL, cb_signal2);		
