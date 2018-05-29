@@ -49,9 +49,9 @@ extern log4c_category_t* mycat;
 
 int game_event_init();
 
-typedef conn_node_base * (*get_conn_node)();
+typedef conn_node_base * (*get_conn_node)(int fd);
 typedef void (*del_conn_node)(conn_node_base *);
-int game_add_listen_event(uint16_t port, get_conn_node cb1, del_conn_node cb2, const char *name);
+int game_add_listen_event(int port, get_conn_node cb1, del_conn_node cb2, const char *name);
 int game_add_connect_event(struct sockaddr *sa, int socklen, conn_node_base *client);
 
 void remove_listen_callback_event(conn_node_base *client);

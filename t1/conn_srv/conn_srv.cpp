@@ -17,8 +17,8 @@
 #include "time_helper.h"
 #include "oper_config.h"
 #include "deamon.h"
+#include "conn_node_client.h"
 #include <evhttp.h>
-//#include "event-internal.h"
 #include "flow_record.h"
 
 void generic_request_handler(struct evhttp_request *req, void *arg)
@@ -157,9 +157,9 @@ int main(int argc, char **argv)
 		goto done;
 	}
 
-// 	ret = game_add_listen_event(port, &client_listener, "client");
-// 	if (ret != 0)
-// 		goto done;
+	ret = game_add_listen_event(port, conn_node_client::get_conn_node, conn_node_client::del_conn_node, "client");
+ 	if (ret < 0)
+ 		goto done;
 
 	add_signal(SIGUSR1, NULL, cb_signal);
 	add_signal(SIGUSR2, NULL, cb_signal2);		
@@ -174,8 +174,11 @@ int main(int argc, char **argv)
 	connsrv_event_timer.ev_callback = cb_connsrv_timer;
 	add_timer(connsrv_timeout, &connsrv_event_timer, NULL);
 	
-	ret = event_base_loop(base, 0);
-	LOG_INFO("event_base_loop stoped[%d]", ret);	
+//	ret = event_base_loop(base, 0);
+	aeMain(global_el);
+	aeDeleteEventLoop(global_el);
+	
+	LOG_INFO("srv loop stoped[%d]", ret);	
 
 //	struct timeval tv;
 //	event_base_gettimeofday_cached(base, &tv);

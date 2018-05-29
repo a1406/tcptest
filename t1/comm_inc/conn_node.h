@@ -174,7 +174,6 @@ public:
 	virtual int send_one_msg(PROTO_HEAD *head, uint8_t force);	
 	virtual struct event* get_write_event() { return NULL; }
 	
-	struct event event_recv;
 	evutil_socket_t fd;
 	uint16_t flag;
 	uint16_t port;

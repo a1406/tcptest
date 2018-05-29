@@ -38,7 +38,7 @@ int game_event_init()
 //	LOG_DEBUG("%s: fd = %d, events = %d, arg = %p", __FUNCTION__, fd, events, arg);
 //}
 
-static void cb_timer(evutil_socket_t fd, short events, void *arg)
+__attribute_used__ static void cb_timer(evutil_socket_t fd, short events, void *arg)
 {
 	LOG_DEBUG("%s: fd = %d, events = %d, arg = %p", __FUNCTION__, fd, events, arg);
 	if (arg)
@@ -120,34 +120,36 @@ int create_new_socket(int set_opt)
 
 int add_timer(struct timeval t, struct event *event_timer, void *arg)
 {
-	if (!event_timer) {
-		event_timer = evtimer_new(base, cb_timer, arg);
-		if (!event_timer) {
-			LOG_ERR("%s %d: evtimer_new failed[%d]", __FUNCTION__, __LINE__, errno);					
-			return (-1);
-		}
-		event_timer->ev_arg = event_timer;
-	} else if (!(event_timer->ev_flags & EVLIST_TIMEOUT)
-		&& !(event_timer->ev_flags & EVLIST_ACTIVE)) {
-		evtimer_assign(event_timer, base, event_timer->ev_callback, arg);
-	}
+	return (0);
+	// if (!event_timer) {
+	// 	event_timer = evtimer_new(base, cb_timer, arg);
+	// 	if (!event_timer) {
+	// 		LOG_ERR("%s %d: evtimer_new failed[%d]", __FUNCTION__, __LINE__, errno);					
+	// 		return (-1);
+	// 	}
+	// 	event_timer->ev_arg = event_timer;
+	// } else if (!(event_timer->ev_flags & EVLIST_TIMEOUT)
+	// 	&& !(event_timer->ev_flags & EVLIST_ACTIVE)) {
+	// 	evtimer_assign(event_timer, base, event_timer->ev_callback, arg);
+	// }
 
-	return evtimer_add(event_timer, &t);
+	// return evtimer_add(event_timer, &t);
 }
 int add_signal(int signum, struct event *event, event_callback_fn callback)
 {
-	if (!event) {
-		event = evsignal_new(base, signum, callback, NULL);
-		if (!event) {
-			LOG_ERR("%s %d: evsignal_new failed[%d]", __FUNCTION__, __LINE__, errno);					
-			return (-1);
-		}
-		event->ev_arg = event;
-	} else {
-		evsignal_assign(event, base, signum, event->ev_callback, NULL);
-	}
+	return (0);
+	// if (!event) {
+	// 	event = evsignal_new(base, signum, callback, NULL);
+	// 	if (!event) {
+	// 		LOG_ERR("%s %d: evsignal_new failed[%d]", __FUNCTION__, __LINE__, errno);					
+	// 		return (-1);
+	// 	}
+	// 	event->ev_arg = event;
+	// } else {
+	// 	evsignal_assign(event, base, signum, event->ev_callback, NULL);
+	// }
 
-	return evsignal_add(event, NULL);
+	// return evsignal_add(event, NULL);
 }
 
 static void cb_send_func(aeEventLoop *el, int fd, void *privdata, int mask)
@@ -193,7 +195,7 @@ static void acceptTcpHandler(aeEventLoop *el, int fd, void *privdata, int mask)
         }
 
 		anetSetBlock(cfd, 0);
-		conn_node_base *node = callback();
+		conn_node_base *node = callback(cfd);
 		if (!node)
 		{
 			close(cfd);
@@ -206,16 +208,14 @@ static void acceptTcpHandler(aeEventLoop *el, int fd, void *privdata, int mask)
 		node->send_buffer_end_pos = 0;
 		node->on_write = cb_send_func;
 		node->pos_begin = node->pos_end = 0;
-		// node->max_buf_len = 10 * 1024;
-		// node->buf = (uint8_t *)malloc(node->max_buf_len);
-		// all_clients[cfd] = node;
+
 		aeCreateFileEvent(el, node->fd, AE_READABLE, cb_recv_func, node);
 
 		LOG_DEBUG("fd %d accept from %s\n", node->fd, cip);
     }
 }
 
-int game_add_listen_event(uint16_t port, get_conn_node cb1, del_conn_node cb2, const char *name)
+int game_add_listen_event(int port, get_conn_node cb1, del_conn_node cb2, const char *name)
 {
 	assert(cb1);
 	assert(cb2);	

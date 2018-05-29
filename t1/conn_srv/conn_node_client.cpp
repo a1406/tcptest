@@ -13,9 +13,6 @@ conn_node_client::conn_node_client()
 {
 	open_id = 0;
 	player_id = 0;
-	handshake = false;
-	conn_step = 1;
-	raidsrv_id = -1;
 
 	send_buffer_begin_pos = 0;
 	send_buffer_end_pos = 0;
@@ -89,11 +86,6 @@ int conn_node_client::send_hello_resp()
 	return (0);
 }
 
-int conn_node_client::respond_websocket_request()
-{
-	return (0);
-}
-
 void conn_node_client::memmove_data()
 {
 	int len = buf_size();
@@ -115,60 +107,6 @@ void conn_node_client::remove_buflen(int len)
 	}
 	pos_begin += len;
 	return;
-}
-
-void conn_node_client::on_recv_frame()
-{
-}
-
-int conn_node_client::frame_read_cb(evutil_socket_t fd)
-{
-	return (0);
-}
-
-int conn_node_client::recv_from_fd()
-{
-	int ret = -1;
-	
-	ret = recv(fd, buf_tail(), buf_leave(), 0);
-	if (ret == 0) {
-		LOG_INFO("%s %d %d: recv ret [%d] err [%d] buf[%p] pos_begin[%d] pos_end[%d]", __PRETTY_FUNCTION__, __LINE__, fd, ret, errno, buf, pos_begin, pos_end);
-		return (-1);
-	}
-	else if (ret < 0) {
-		if (errno != EAGAIN && errno != EINTR) {
-			LOG_ERR("%s %d %d: recv ret [%d] err [%d] buf[%p] pos_begin[%d] pos_end[%d]", __PRETTY_FUNCTION__, __LINE__, fd, ret, errno, buf, pos_begin, pos_end);
-			return (-1);
-		}
-		else {
-//			LOG_DEBUG("%s %d %d: recv ret [%d] err [%d] buf[%p] pos_begin[%d] pos_end[%d]", __PRETTY_FUNCTION__, __LINE__, fd, ret, errno, buf, pos_begin, pos_end);
-			return 2;
-		}
-	}
-	else {
-		pos_end += ret;
-	}
-	assert((int32_t)pos_end>=ret);
-	return (0);
-}
-
-int conn_node_client::recv_handshake(evutil_socket_t fd)
-{
-	int ret = recv_from_fd();
-	if (ret != 0)
-		return ret;
-	int len = buf_size();
-
-	char *end = (char *)buf_tail();
-	if (len >= 4 && end[-1] == '\n' && end[-2] == '\r' && end[-3] == '\n' && end[-4] == '\r') {
-		if (respond_websocket_request() != 0) //send websocket response
-			return -1;
-//		LOG_INFO("[%s : %d]: packet header error, len: %d, leave: %d", __PRETTY_FUNCTION__, __LINE__, len, buf_leave());
-		pos_begin = pos_end = 0;
-		handshake = true;
-		return (0);
-	}
-	return (0);
 }
 
 int conn_node_client::recv_func(evutil_socket_t fd)
@@ -273,11 +211,12 @@ int conn_node_client::send_one_buffer(char *buffer, uint32_t len)
 	send_buffer_end_pos += len;
 
 	if (send_buffer_begin_pos == 0) {
-		int result = event_add(&this->ev_write, NULL);
-		if (0 != result) {
-			LOG_ERR("[%s : %d]: event add failed, result: %d", __PRETTY_FUNCTION__, __LINE__, result);
-			return result;
-		}
+		// TODO: 
+		// int result = event_add(&this->ev_write, NULL);
+		// if (0 != result) {
+		// 	LOG_ERR("[%s : %d]: event add failed, result: %d", __PRETTY_FUNCTION__, __LINE__, result);
+		// 	return result;
+		// }
 	}
 
 	return 0;
@@ -323,11 +262,12 @@ int conn_node_client::send_one_msg(PROTO_HEAD *head, uint8_t force) {
 	send_buffer_end_pos += len;
 
 	if (send_buffer_begin_pos == 0) {
-		int result = event_add(&this->ev_write, NULL);
-		if (0 != result) {
-			LOG_ERR("[%s : %d]: event add failed, result: %d", __PRETTY_FUNCTION__, __LINE__, result);
-			return result;
-		}
+		// TODO: 
+		// int result = event_add(&this->ev_write, NULL);
+		// if (0 != result) {
+		// 	LOG_ERR("[%s : %d]: event add failed, result: %d", __PRETTY_FUNCTION__, __LINE__, result);
+		// 	return result;
+		// }
 	}
 
 	return 0;
@@ -405,6 +345,28 @@ std::map<evutil_socket_t, conn_node_client *> conn_node_client::map_fd_nodes;
 std::map<uint64_t, conn_node_client *> conn_node_client::map_player_id_nodes;
 std::map<uint32_t, conn_node_client *> conn_node_client::map_open_id_nodes;
 
+conn_node_base *conn_node_client::get_conn_node(int fd)
+{
+	conn_node_client *ret = new conn_node_client;
+	ret->buf = (uint8_t *)malloc(128 * 1024);
+	ret->max_buf_len = 128 * 1024;
+	ret->send_buffer = (char *)malloc(128 * 1024);
+	ret->send_buffer_size = 128 * 1024;
+
+	assert(map_fd_nodes.find(fd) == map_fd_nodes.end());
+	map_fd_nodes[fd] = ret;
+	return ret;
+}
+
+void conn_node_client::del_conn_node(conn_node_base *node)
+{
+	conn_node_client *client = (conn_node_client *)node;	
+	map_fd_nodes.erase(client->fd);
+	map_player_id_nodes.erase(client->player_id);
+	map_open_id_nodes.erase(client->open_id);	
+	delete client;
+}
+
 int conn_node_client::add_map_fd_nodes(conn_node_client *client)
 {
 	map_fd_nodes[client->fd]=  client;
@@ -467,20 +429,22 @@ void conn_node_client::send_data_to_client() {
 
 	if (len == -1) {  //发送失败
 		if (errno == EINTR || errno == EAGAIN) {
-			int result = event_add(&this->ev_write, NULL);
-			if (0 != result) {
-				LOG_ERR("[%s : %d]: event add failed, result: %d", __PRETTY_FUNCTION__, __LINE__, result);
-				return;
-			}
+			// TODO: 
+			// int result = event_add(&this->ev_write, NULL);
+			// if (0 != result) {
+			// 	LOG_ERR("[%s : %d]: event add failed, result: %d", __PRETTY_FUNCTION__, __LINE__, result);
+			// 	return;
+			// }
 		}
 	}
 	else if (send_buffer_begin_pos + len < send_buffer_end_pos) {  //没发完
 		send_buffer_begin_pos += len;
-		int result = event_add(&this->ev_write, NULL);
-		if (0 != result) {
-			LOG_ERR("[%s : %d]: event add failed, result: %d", __PRETTY_FUNCTION__, __LINE__, result);
-			return;
-		}
+		// TODO: 
+		// int result = event_add(&this->ev_write, NULL);
+		// if (0 != result) {
+		// 	LOG_ERR("[%s : %d]: event add failed, result: %d", __PRETTY_FUNCTION__, __LINE__, result);
+		// 	return;
+		// }
 	}
 	else {  //发完了
 		send_buffer_begin_pos = send_buffer_end_pos = 0;
