@@ -1,7 +1,6 @@
 #include "conn_node_client.h"
 #include "time_helper.h"
 #include "game_event.h"
-#include "../proto/msgid.h"
 #include "tea.h"
 #include "flow_record.h"
 #include <errno.h>
@@ -326,9 +325,6 @@ int conn_node_client::send_one_msg(PROTO_HEAD *head, uint8_t force) {
 	}
 
 
-	if (head->msg_id != MSG_ID_HEARTBEAT_NOTIFY)
-		LOG_DEBUG("[%s: %d]: fd: %d: send msg[%d] len[%d], seq[%d] begin[%d]end[%d]", __PRETTY_FUNCTION__, __LINE__, fd, ENDION_FUNC_2(head->msg_id), ENDION_FUNC_4(head->len), ENDION_FUNC_2(head->seq), send_buffer_begin_pos, send_buffer_end_pos);
-
 	memcpy(send_buffer+send_buffer_end_pos, p, len);
 	encoder_data((PROTO_HEAD*)(send_buffer+send_buffer_end_pos));
 
@@ -355,152 +351,11 @@ int conn_node_client::send_player_exit(bool again/* = false*/)
 
 int conn_node_client::dispatch_message()
 {
-	PROTO_HEAD *head = (PROTO_HEAD *)buf_head();
-
-	uint32_t cmd = ENDION_FUNC_2(head->msg_id);
-
-
-	switch (cmd)
-	{
-		case MSG_ID_PLAYER_LIST_REQUEST:
-		{
-			if (player_id > 0)
-			{
-				return send_player_exit(true);
-			}
-			else
-			{
-				return transfer_to_loginserver();
-			}
-		}
-		break;
-		case MSG_ID_MAIL_LIST_REQUEST:
-		case MSG_ID_MAIL_READ_REQUEST:
-		case MSG_ID_MAIL_GET_ATTACH_REQUEST:
-		case MSG_ID_MAIL_DEL_REQUEST:
-			transfer_to_mailsrv();
-			break;
-		case MSG_ID_LIST_WANYAOKA_REQUEST:
-		case MSG_ID_FRIEND_INFO_REQUEST:
-		case MSG_ID_FRIEND_ADD_CONTACT_REQUEST:
-		case MSG_ID_FRIEND_DEL_CONTACT_REQUEST:
-		case MSG_ID_FRIEND_ADD_BLOCK_REQUEST:
-		case MSG_ID_FRIEND_DEL_BLOCK_REQUEST:
-		case MSG_ID_FRIEND_DEL_ENEMY_REQUEST:
-		case MSG_ID_FRIEND_CREATE_GROUP_REQUEST:
-		case MSG_ID_FRIEND_EDIT_GROUP_REQUEST:
-		case MSG_ID_FRIEND_REMOVE_GROUP_REQUEST:
-		case MSG_ID_FRIEND_MOVE_PLAYER_GROUP_REQUEST:
-		case MSG_ID_FRIEND_DEAL_APPLY_REQUEST:
-//		case MSG_ID_FRIEND_RECOMMEND_REQUEST:
-		case MSG_ID_FRIEND_SEND_GIFT_REQUEST:
-		case MSG_ID_FRIEND_TRACK_ENEMY_REQUEST:
-		case MSG_ID_FRIEND_AUTO_ACCEPT_APPLY_REQUEST:
-		case MSG_ID_FRIEND_ID_OR_NO_EACH_OTHER_REQUEST:
-			transfer_to_friendsrv();
-			break;
-		case MSG_ID_GUILD_LIST_REQUEST:
-		case MSG_ID_GUILD_INFO_REQUEST:
-		case MSG_ID_GUILD_MEMBER_LIST_REQUEST:
-		case MSG_ID_GUILD_CREATE_REQUEST:
-		case MSG_ID_GUILD_JOIN_REQUEST:
-		case MSG_ID_GUILD_JOIN_LIST_REQUEST:
-		case MSG_ID_GUILD_DEAL_JOIN_REQUEST:
-		case MSG_ID_GUILD_TURN_SWITCH_REQUEST:
-		case MSG_ID_GUILD_SET_WORDS_REQUEST:
-		case MSG_ID_GUILD_APPOINT_OFFICE_REQUEST:
-		case MSG_ID_GUILD_KICK_REQUEST:
-		case MSG_ID_GUILD_RENAME_REQUEST:
-		case MSG_ID_GUILD_EXIT_REQUEST:
-		case MSG_ID_GUILD_BUILDING_INFO_REQUEST:
-		case MSG_ID_GUILD_BUILDING_UPGRADE_REQUEST:
-		case MSG_ID_GUILD_SKILL_INFO_REQUEST:
-		case MSG_ID_GUILD_SKILL_DEVELOP_REQUEST:
-		case MSG_ID_GUILD_SKILL_PRACTICE_REQUEST:
-		case MSG_ID_GUILD_SHOP_INFO_REQUEST:
-		case MSG_ID_GUILD_SHOP_BUY_REQUEST:
-		case MSG_ID_OPEN_FACTION_QUESTION_REQUEST:
-		case MSG_ID_GUILD_BATTLE_CALL_REQUEST:
-		case MSG_ID_GUILD_SET_PERMISSION_REQUEST:
-		case MSG_ID_GUILD_ACCEPT_TASK_REQUEST:
-		case MSG_ID_GUILD_INVITE_REQUEST:
-		case MSG_ID_GUILD_DEAL_INVITE_REQUEST:
-		case MSG_ID_GUILD_DONATE_REQUEST:
-		case MSG_ID_GUILD_BONFIRE_OPEN_REQUEST:
-		case MSG_ID_GUILD_GET_LEVEL_GIFT_REQUEST:
-			return transfer_to_guildsrv();
-		case MSG_ID_RANK_INFO_REQUEST:
-		case MSG_ID_WORLDBOSS_REAL_RANK_INFO_REQUEST:
-		case MSG_ID_WORLDBOSS_ZHUJIEMIAN_INFO_REQUEST:
-		case MSG_ID_WORLDBOSS_LAST_RANK_INFO_REQUEST:
-		case MSG_ID_GET_ZHENYING_LEADER_REQUEST:
-			return transfer_to_ranksrv();
-		case MSG_ID_DOUFACHANG_CHALLENGE_REQUEST:
-		case MSG_ID_DOUFACHANG_INFO_REQUEST:
-		case MSG_ID_DOUFACHANG_GET_REWARD_REQUEST:
-		case MSG_ID_DOUFACHANG_RECORD_REQUEST:
-		case MSG_ID_DOUFACHANG_BUY_CHALLENGE_REQUEST:
-			return transfer_to_doufachang();
-		case MSG_ID_TRADE_OFF_SHELF_REQUEST:
-		case MSG_ID_TRADE_RESHELF_REQUEST:
-		case MSG_ID_TRADE_ENLARGE_SHELF_REQUEST:
-		case MSG_ID_TRADE_ITEM_SUMMARY_REQUEST:
-		case MSG_ID_TRADE_ITEM_DETAIL_REQUEST:
-		case MSG_ID_TRADE_BUY_REQUEST:
-		case MSG_ID_TRADE_GET_EARNING_REQUEST:
-		case MSG_ID_AUCTION_BID_REQUEST:
-		case MSG_ID_AUCTION_BUY_NOW_REQUEST:
-		case MSG_ID_AUCTION_INFO_REQUEST:
-		case MSG_ID_RED_BACKET_MAIN_JIEMAIN_INFO_REQUEST:
-		case MSG_ID_RED_BACKET_DETAILED_INFO_REQUEST:
-		case MSG_ID_RED_BACKET_QIANG_HONGBAO_REQUEST:
-		case MSG_ID_RED_BACKET_HISTORY_INFO_REQUEST:
-			return transfer_to_tradesrv();
-		case MSG_ID_ZHANLIDAREN_GET_REWARD_REQUEST:
-			return transfer_to_activitysrv();
-		default:
-			return transfer_to_gameserver();
-	}
-
 	return (0);
 }
 
 int conn_node_client::transfer_to_raidserver()
 {
-	PROTO_HEAD *head;
-	head = (PROTO_HEAD *)buf_head();
-	uint32_t cmd = ENDION_FUNC_2(head->msg_id);
-	UNUSED(cmd);
-	switch (cmd)
-	{
-		case MSG_ID_MOVE_REQUEST:
-		case MSG_ID_ENTER_SCENE_READY_REQUEST:
-		case MSG_ID_MOVE_START_REQUEST:
-		case MSG_ID_MOVE_STOP_REQUEST:
-		case MSG_ID_MOVE_Y_START_REQUEST:
-		case MSG_ID_MOVE_Y_STOP_REQUEST:
-		case MSG_ID_SKILL_CAST_REQUEST:
-		case MSG_ID_SKILL_HIT_REQUEST:
-		case MSG_ID_PARTNER_SKILL_CAST_REQUEST:
-		case MSG_ID_TRANSFER_OUT_STUCK_REQUEST:
-		case MSG_ID_RELIVE_REQUEST:
-		case MSG_ID_COLLECT_BEGIN_REQUEST:
-		case MSG_ID_COLLECT_INTERRUPT_REQUEST:
-		case MSG_ID_COLLECT_COMMPLETE_REQUEST:
-		case MSG_ID_SING_INTERRUPT_REQUEST:
-		case MSG_ID_SING_END_REQUEST:
-		case MSG_ID_SING_BEGIN_REQUEST:
-		case MSG_ID_TRANSFER_TO_LEADER_REQUEST:
-		case MSG_ID_LEAVE_RAID_REQUEST:
-		case MSG_ID_TEAM_RAID_READY_REQUEST:
-		case MSG_ID_TEAM_RAID_CANCEL_REQUEST:
-		case MSG_ID_NPC_TALK_REQUEST:
-		case MSG_ID_RAID_AI_CONTINUE_REQUEST:
-			break;
-		default:
-			return (-1);
-	}
-	
 	return (0);
 }
 

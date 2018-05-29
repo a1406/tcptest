@@ -111,19 +111,19 @@ depend:
 .PHONY : depend
 
 # Convenience name for target.
-conn_srv/CMakeFiles/conn_srv_3.dir/rule:
-	cd /home/jack/gitroot/tcptest/t1 && $(MAKE) -f CMakeFiles/Makefile2 conn_srv/CMakeFiles/conn_srv_3.dir/rule
-.PHONY : conn_srv/CMakeFiles/conn_srv_3.dir/rule
+conn_srv/CMakeFiles/conn_srv.dir/rule:
+	cd /home/jack/gitroot/tcptest/t1 && $(MAKE) -f CMakeFiles/Makefile2 conn_srv/CMakeFiles/conn_srv.dir/rule
+.PHONY : conn_srv/CMakeFiles/conn_srv.dir/rule
 
 # Convenience name for target.
-conn_srv_3: conn_srv/CMakeFiles/conn_srv_3.dir/rule
+conn_srv: conn_srv/CMakeFiles/conn_srv.dir/rule
 
-.PHONY : conn_srv_3
+.PHONY : conn_srv
 
 # fast build rule for target.
-conn_srv_3/fast:
-	cd /home/jack/gitroot/tcptest/t1 && $(MAKE) -f conn_srv/CMakeFiles/conn_srv_3.dir/build.make conn_srv/CMakeFiles/conn_srv_3.dir/build
-.PHONY : conn_srv_3/fast
+conn_srv/fast:
+	cd /home/jack/gitroot/tcptest/t1 && $(MAKE) -f conn_srv/CMakeFiles/conn_srv.dir/build.make conn_srv/CMakeFiles/conn_srv.dir/build
+.PHONY : conn_srv/fast
 
 conn_node_client.o: conn_node_client.cpp.o
 
@@ -131,7 +131,7 @@ conn_node_client.o: conn_node_client.cpp.o
 
 # target to build an object file
 conn_node_client.cpp.o:
-	cd /home/jack/gitroot/tcptest/t1 && $(MAKE) -f conn_srv/CMakeFiles/conn_srv_3.dir/build.make conn_srv/CMakeFiles/conn_srv_3.dir/conn_node_client.cpp.o
+	cd /home/jack/gitroot/tcptest/t1 && $(MAKE) -f conn_srv/CMakeFiles/conn_srv.dir/build.make conn_srv/CMakeFiles/conn_srv.dir/conn_node_client.cpp.o
 .PHONY : conn_node_client.cpp.o
 
 conn_node_client.i: conn_node_client.cpp.i
@@ -140,7 +140,7 @@ conn_node_client.i: conn_node_client.cpp.i
 
 # target to preprocess a source file
 conn_node_client.cpp.i:
-	cd /home/jack/gitroot/tcptest/t1 && $(MAKE) -f conn_srv/CMakeFiles/conn_srv_3.dir/build.make conn_srv/CMakeFiles/conn_srv_3.dir/conn_node_client.cpp.i
+	cd /home/jack/gitroot/tcptest/t1 && $(MAKE) -f conn_srv/CMakeFiles/conn_srv.dir/build.make conn_srv/CMakeFiles/conn_srv.dir/conn_node_client.cpp.i
 .PHONY : conn_node_client.cpp.i
 
 conn_node_client.s: conn_node_client.cpp.s
@@ -149,7 +149,7 @@ conn_node_client.s: conn_node_client.cpp.s
 
 # target to generate assembly for a file
 conn_node_client.cpp.s:
-	cd /home/jack/gitroot/tcptest/t1 && $(MAKE) -f conn_srv/CMakeFiles/conn_srv_3.dir/build.make conn_srv/CMakeFiles/conn_srv_3.dir/conn_node_client.cpp.s
+	cd /home/jack/gitroot/tcptest/t1 && $(MAKE) -f conn_srv/CMakeFiles/conn_srv.dir/build.make conn_srv/CMakeFiles/conn_srv.dir/conn_node_client.cpp.s
 .PHONY : conn_node_client.cpp.s
 
 conn_srv.o: conn_srv.cpp.o
@@ -158,7 +158,7 @@ conn_srv.o: conn_srv.cpp.o
 
 # target to build an object file
 conn_srv.cpp.o:
-	cd /home/jack/gitroot/tcptest/t1 && $(MAKE) -f conn_srv/CMakeFiles/conn_srv_3.dir/build.make conn_srv/CMakeFiles/conn_srv_3.dir/conn_srv.cpp.o
+	cd /home/jack/gitroot/tcptest/t1 && $(MAKE) -f conn_srv/CMakeFiles/conn_srv.dir/build.make conn_srv/CMakeFiles/conn_srv.dir/conn_srv.cpp.o
 .PHONY : conn_srv.cpp.o
 
 conn_srv.i: conn_srv.cpp.i
@@ -167,7 +167,7 @@ conn_srv.i: conn_srv.cpp.i
 
 # target to preprocess a source file
 conn_srv.cpp.i:
-	cd /home/jack/gitroot/tcptest/t1 && $(MAKE) -f conn_srv/CMakeFiles/conn_srv_3.dir/build.make conn_srv/CMakeFiles/conn_srv_3.dir/conn_srv.cpp.i
+	cd /home/jack/gitroot/tcptest/t1 && $(MAKE) -f conn_srv/CMakeFiles/conn_srv.dir/build.make conn_srv/CMakeFiles/conn_srv.dir/conn_srv.cpp.i
 .PHONY : conn_srv.cpp.i
 
 conn_srv.s: conn_srv.cpp.s
@@ -176,7 +176,7 @@ conn_srv.s: conn_srv.cpp.s
 
 # target to generate assembly for a file
 conn_srv.cpp.s:
-	cd /home/jack/gitroot/tcptest/t1 && $(MAKE) -f conn_srv/CMakeFiles/conn_srv_3.dir/build.make conn_srv/CMakeFiles/conn_srv_3.dir/conn_srv.cpp.s
+	cd /home/jack/gitroot/tcptest/t1 && $(MAKE) -f conn_srv/CMakeFiles/conn_srv.dir/build.make conn_srv/CMakeFiles/conn_srv.dir/conn_srv.cpp.s
 .PHONY : conn_srv.cpp.s
 
 listen_node_client.o: listen_node_client.cpp.o
@@ -185,7 +185,7 @@ listen_node_client.o: listen_node_client.cpp.o
 
 # target to build an object file
 listen_node_client.cpp.o:
-	cd /home/jack/gitroot/tcptest/t1 && $(MAKE) -f conn_srv/CMakeFiles/conn_srv_3.dir/build.make conn_srv/CMakeFiles/conn_srv_3.dir/listen_node_client.cpp.o
+	cd /home/jack/gitroot/tcptest/t1 && $(MAKE) -f conn_srv/CMakeFiles/conn_srv.dir/build.make conn_srv/CMakeFiles/conn_srv.dir/listen_node_client.cpp.o
 .PHONY : listen_node_client.cpp.o
 
 listen_node_client.i: listen_node_client.cpp.i
@@ -194,7 +194,7 @@ listen_node_client.i: listen_node_client.cpp.i
 
 # target to preprocess a source file
 listen_node_client.cpp.i:
-	cd /home/jack/gitroot/tcptest/t1 && $(MAKE) -f conn_srv/CMakeFiles/conn_srv_3.dir/build.make conn_srv/CMakeFiles/conn_srv_3.dir/listen_node_client.cpp.i
+	cd /home/jack/gitroot/tcptest/t1 && $(MAKE) -f conn_srv/CMakeFiles/conn_srv.dir/build.make conn_srv/CMakeFiles/conn_srv.dir/listen_node_client.cpp.i
 .PHONY : listen_node_client.cpp.i
 
 listen_node_client.s: listen_node_client.cpp.s
@@ -203,7 +203,7 @@ listen_node_client.s: listen_node_client.cpp.s
 
 # target to generate assembly for a file
 listen_node_client.cpp.s:
-	cd /home/jack/gitroot/tcptest/t1 && $(MAKE) -f conn_srv/CMakeFiles/conn_srv_3.dir/build.make conn_srv/CMakeFiles/conn_srv_3.dir/listen_node_client.cpp.s
+	cd /home/jack/gitroot/tcptest/t1 && $(MAKE) -f conn_srv/CMakeFiles/conn_srv.dir/build.make conn_srv/CMakeFiles/conn_srv.dir/listen_node_client.cpp.s
 .PHONY : listen_node_client.cpp.s
 
 # Help Target
@@ -213,7 +213,7 @@ help:
 	@echo "... clean"
 	@echo "... depend"
 	@echo "... rebuild_cache"
-	@echo "... conn_srv_3"
+	@echo "... conn_srv"
 	@echo "... edit_cache"
 	@echo "... conn_node_client.o"
 	@echo "... conn_node_client.i"

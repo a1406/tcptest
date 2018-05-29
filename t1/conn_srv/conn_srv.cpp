@@ -14,10 +14,8 @@
 #include <map>
 #include <pthread.h>
 #include "game_event.h"
-#include "../proto/msgid.h"
 #include "time_helper.h"
 #include "listen_node_client.h"
-#include "../proto/login.pb-c.h"
 #include "oper_config.h"
 #include "deamon.h"
 #include <evhttp.h>
