@@ -41,8 +41,8 @@ static void recv_func(aeEventLoop *el, int fd, void *privdata, int mask)
 	}
 	else
 	{
-//		PROTO_HEAD *head = (PROTO_HEAD *)buf;
-//		printf("recv len = %d, head len = %d, head buf = %s\n", ret, head->len, head->data);
+		PROTO_HEAD *head = (PROTO_HEAD *)buf;
+		printf("recv len = %d, head len = %d, head buf = %s\n", ret, head->len, head->data);
 	}
 		
 }

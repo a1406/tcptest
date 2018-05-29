@@ -173,62 +173,54 @@ int conn_node_client::recv_handshake(evutil_socket_t fd)
 
 int conn_node_client::recv_func(evutil_socket_t fd)
 {
-	if (!handshake)
-	{
-		return recv_handshake(fd);
-	}
-	else
-	{
-		return frame_read_cb(fd);
-	}
-	
-	
 	PROTO_HEAD *head;
-	uint32_t old_len;
-	EXTERN_DATA save_data;
-	EXTERN_DATA *extern_data;
+//	uint32_t old_len;
+//	EXTERN_DATA save_data;
+//	EXTERN_DATA *extern_data;
 
 	for (;;) {
 		int ret = get_one_buf();
 		if (ret == 0) {
 			head = (PROTO_HEAD *)buf_head();
 
-			if (decode_and_check_crc(head) != 0) {
-				LOG_INFO("%s %d: crc err, connect closed from fd %u, err = %d", __PRETTY_FUNCTION__, __LINE__, fd, errno);
-				return (-1);
-			}
+			send_one_msg(head, 1);
 
-			uint32_t cmd = ENDION_FUNC_2(head->msg_id);
-			if (0 == cmd) {
-				send_hello_resp();
-//				this->send_one_msg(head, 1);
-			} else {
-				old_len = ENDION_FUNC_4(head->len);
-				extern_data = (EXTERN_DATA *)&head->data[old_len - sizeof(PROTO_HEAD)];
-				memcpy(&save_data, extern_data, sizeof(EXTERN_DATA));
-				head->len = ENDION_FUNC_4(old_len + sizeof(EXTERN_DATA));
+// 			if (decode_and_check_crc(head) != 0) {
+// 				LOG_INFO("%s %d: crc err, connect closed from fd %u, err = %d", __PRETTY_FUNCTION__, __LINE__, fd, errno);
+// 				return (-1);
+// 			}
 
-				extern_data->player_id = player_id;
-				extern_data->open_id = open_id;
-				extern_data->fd = fd;
-				extern_data->port = sock.sin_port;
+// 			uint32_t cmd = ENDION_FUNC_2(head->msg_id);
+// 			if (0 == cmd) {
+// 				send_hello_resp();
+// //				this->send_one_msg(head, 1);
+// 			} else {
+// 				old_len = ENDION_FUNC_4(head->len);
+// 				extern_data = (EXTERN_DATA *)&head->data[old_len - sizeof(PROTO_HEAD)];
+// 				memcpy(&save_data, extern_data, sizeof(EXTERN_DATA));
+// 				head->len = ENDION_FUNC_4(old_len + sizeof(EXTERN_DATA));
 
-				transfer_to_dumpserver(head);
-#ifdef FLOW_MONITOR
-				add_one_client_request(head);
-#endif
-				if (player_id == 0) {
-					if (transfer_to_loginserver() != 0) {
-						remove_listen_callback_event(this);
-						return (0);
-					}
-				} else if (dispatch_message() != 0) {
-				}
+// 				extern_data->player_id = player_id;
+// 				extern_data->open_id = open_id;
+// 				extern_data->fd = fd;
+// 				extern_data->port = sock.sin_port;
 
-//				transfer_to_gameserver();
-				head->len = ENDION_FUNC_4(old_len);
-				memcpy(extern_data, &save_data, sizeof(EXTERN_DATA));
-			}
+// 				transfer_to_dumpserver(head);
+// #ifdef FLOW_MONITOR
+// 				add_one_client_request(head);
+// #endif
+// 				if (player_id == 0) {
+// 					if (transfer_to_loginserver() != 0) {
+// 						remove_listen_callback_event(this);
+// 						return (0);
+// 					}
+// 				} else if (dispatch_message() != 0) {
+// 				}
+
+// //				transfer_to_gameserver();
+// 				head->len = ENDION_FUNC_4(old_len);
+// 				memcpy(extern_data, &save_data, sizeof(EXTERN_DATA));
+//			}
 		}
 
 		if (ret < 0) {

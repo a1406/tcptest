@@ -153,9 +153,6 @@ int main(int argc, char **argv)
 		goto done;
 	}
 
-	line = get_first_key(file, (char *)"game_srv_id");
-	sg_server_id = (uint64_t )strtoul(get_value(line), NULL, 0);
-
 	line = get_first_key(file, (char *)"conn_srv_client_port");
 	port = atoi(get_value(line));
 	if (port <= 0) {

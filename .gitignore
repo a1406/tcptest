@@ -1,6 +1,7 @@
 *~
 main
 newsrv
+conn_srv
 .1.sh
 Server/*_srv/*_srv
 !Server/game_srv/so_game_srv
