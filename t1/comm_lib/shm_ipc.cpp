@@ -1,4 +1,7 @@
 #include "shm_ipc.h"
+#include <limits.h>
+#include <stdlib.h>
+#include <stdint.h>
 #include "game_event.h"
 #include "oper_config.h"
 
@@ -10,6 +13,11 @@ static shm_ipc_obj *init_shm_ipc_obj(int key, int size, bool create)
 		flag |= IPC_CREAT|IPC_EXCL;
 	}
 	int shmid = shmget(key, size, flag);
+	if (shmid == -1) {
+		LOG_ERR("%s %d: shmget fail[%d]", __FUNCTION__, __LINE__, errno);
+		return NULL;
+	}
+	
 	shm_ipc_obj *ret;
 	ret = (shm_ipc_obj *)shmat(shmid, NULL, 0);
 	if (ret == (void *)-1) {
@@ -38,14 +46,22 @@ shm_ipc_obj *init_shm_from_config(const char *prefix, FILE *file)
 
 	sprintf(t, "%s_addr", prefix);
 	line = get_first_key(file, t);
-	addr = atoi(get_value(line));
+	if (!line) {
+		LOG_ERR("config file wrong, no %s", t);
+		return NULL;		
+	}
+	addr = strtol(get_value(line), NULL, 0);
 	if (addr <= 0) {
 		LOG_ERR("config file wrong, no %s", t);
 		return NULL;
 	}
     sprintf(t, "%s_size", prefix);									  
     line = get_first_key(file, t);
-	size = atoi(get_value(line));
+	if (!line) {
+		LOG_ERR("config file wrong, no %s", t);
+		return NULL;		
+	}
+	size = strtol(get_value(line), NULL, 0);
 	if (size <= 0) {
 		LOG_ERR("config file wrong, no %s", t);
 		return NULL;
@@ -96,7 +112,8 @@ static int shm_ipc_obj_avaliable_size(shm_ipc_obj *obj)
 
 int write_to_shm_ipc(shm_ipc_obj *obj, PROTO_HEAD *head)
 {
-	assert(shm_ipc_obj_avaliable_size(obj) >= (int)head->len);
+	if (shm_ipc_obj_avaliable_size(obj) < (int)head->len)
+		return -1;
 
 		//如果被重置了，那么要做memmove
 		//如果没有重置，随时可能被重置

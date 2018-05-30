@@ -22,20 +22,32 @@
 #include <evhttp.h>
 #include "flow_record.h"
 
-int init_conn_client_map()
+static int init_conn_client_map()
 {
 	return (0);
 }
 
-int cb_connsrv_timer(struct aeEventLoop *eventLoop, long long id, void *clientData)
+static int cb_connsrv_timer(struct aeEventLoop *eventLoop, long long id, void *clientData)
 {
 	LOG_DEBUG("%s: id = %lld", __FUNCTION__, id);
 	printf("%s id = %lld\n", __FUNCTION__, id);
 	return (3000);
 }
 
-shm_ipc_obj *ipc_game_rd;
+static shm_ipc_obj *ipc_game_rd;
 shm_ipc_obj *ipc_game_wr;
+static void cb_recv_shm_ipcs(struct aeEventLoop *eventLoop)
+{
+	for (;;)
+	{
+		PROTO_HEAD *head = read_from_shm_ipc(ipc_game_rd);
+		if (!head)
+		{
+			break;
+		}
+		try_read_reset(ipc_game_rd);		
+	}
+}
 
 int main(int argc, char **argv)
 {
@@ -113,6 +125,7 @@ int main(int argc, char **argv)
 		return (0);
 	}
 
+	aeSetAfterSleepProc(global_el, cb_recv_shm_ipcs);
 	aeCreateTimeEvent(global_el, 3000, cb_connsrv_timer, NULL, NULL);
 
 	aeMain(global_el);

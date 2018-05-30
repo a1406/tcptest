@@ -2,6 +2,7 @@
 #define _CONN_NODE_CLIENT_H__
 
 #include "conn_node.h"
+#include "shm_ipc.h"
 #include "game_event.h"
 
 //#define MAX_CLIENT_SEND_BUFFER_SIZE (1024*256)
@@ -60,4 +61,5 @@ private:
 	int send_hello_resp();	
 };
 
+extern shm_ipc_obj *ipc_game_wr;
 #endif
