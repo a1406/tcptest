@@ -126,7 +126,7 @@ int conn_node_client::recv_func(evutil_socket_t fd)
 		if (ret == 0) {
 			head = (PROTO_HEAD *)buf_head();
 
-			send_one_msg(head, 1);
+			send_one_msg(head);
 
 // 			if (decode_and_check_crc(head) != 0) {
 // 				LOG_INFO("%s %d: crc err, connect closed from fd %u, err = %d", __PRETTY_FUNCTION__, __LINE__, fd, errno);
@@ -197,88 +197,6 @@ void encoder_data(PROTO_HEAD *head) {
 		p += 8;
 	}
 */
-}
-
-int conn_node_client::send_one_buffer(char *buffer, uint32_t len)
-{
-#if 1
-#ifdef FLOW_MONITOR
-	add_one_client_answer(head);
-#endif
-	if (send_buffer_end_pos+len >= MAX_CLIENT_SEND_BUFFER_SIZE) {  ///缓冲区溢出, 关闭连接
-		LOG_DEBUG("[%s: %d]: fd: %d: send msg len[%d], begin[%d]end[%d] buffer full", __PRETTY_FUNCTION__, __LINE__, fd, len, send_buffer_begin_pos, send_buffer_end_pos);
-		return -1;
-	}
-
-	memcpy(send_buffer+send_buffer_end_pos, buffer, len);
-	encoder_data((PROTO_HEAD*)(send_buffer+send_buffer_end_pos));
-
-	send_buffer_end_pos += len;
-
-	if (send_buffer_begin_pos == 0) {
-		// TODO: 
-		// int result = event_add(&this->ev_write, NULL);
-		// if (0 != result) {
-		// 	LOG_ERR("[%s : %d]: event add failed, result: %d", __PRETTY_FUNCTION__, __LINE__, result);
-		// 	return result;
-		// }
-	}
-
-	return 0;
-#else
-	return conn_node_base::send_one_msg(head, force);
-#endif
-}
-
-
-int conn_node_client::send_one_msg(PROTO_HEAD *head, uint8_t force) {
-	{
-		static uint8_t dump_buf[MAX_GLOBAL_SEND_BUF + sizeof(EXTERN_DATA)];
-		memcpy(dump_buf, head, ENDION_FUNC_4(head->len));
-		PROTO_HEAD *head1 = (PROTO_HEAD *)dump_buf;
-		EXTERN_DATA ext_data;
-		ext_data.open_id = open_id;
-		ext_data.player_id = player_id;
-		ext_data.fd = fd;
-		ext_data.port = port;
-		add_extern_data(head1, &ext_data);
-		transfer_to_dumpserver(head1);
-	}
-#if 1
-
-#ifdef FLOW_MONITOR
-	add_one_client_answer(head);
-#endif
-
-//	static int seq = 1;
-	char *p = (char *)head;
-	int len = ENDION_FUNC_4(head->len);
-//	head->seq = ENDION_FUNC_2(seq++);
-
-	if (send_buffer_end_pos+len >= MAX_CLIENT_SEND_BUFFER_SIZE) {  ///缓冲区溢出, 关闭连接
-		LOG_DEBUG("[%s: %d]: fd: %d: send msg[%d] len[%d], seq[%d] begin[%d]end[%d] buffer full", __PRETTY_FUNCTION__, __LINE__, fd, ENDION_FUNC_2(head->msg_id), ENDION_FUNC_4(head->len), ENDION_FUNC_2(head->seq), send_buffer_begin_pos, send_buffer_end_pos);
-		return -1;
-	}
-
-
-	memcpy(send_buffer+send_buffer_end_pos, p, len);
-	encoder_data((PROTO_HEAD*)(send_buffer+send_buffer_end_pos));
-
-	send_buffer_end_pos += len;
-
-	if (send_buffer_begin_pos == 0) {
-		// TODO: 
-		// int result = event_add(&this->ev_write, NULL);
-		// if (0 != result) {
-		// 	LOG_ERR("[%s : %d]: event add failed, result: %d", __PRETTY_FUNCTION__, __LINE__, result);
-		// 	return result;
-		// }
-	}
-
-	return 0;
-#else
-	return conn_node_base::send_one_msg(head, force);
-#endif
 }
 
 int conn_node_client::send_player_exit(bool again/* = false*/)
@@ -419,55 +337,3 @@ conn_node_client *conn_node_client::get_nodes_by_open_id(uint32_t open_id)
 }
 
 
-void on_client_write(int fd, short ev, void *arg) {
-	assert(arg);
-	conn_node_client *client = (conn_node_client *)arg;
-	client->send_data_to_client();
-}
-
-void conn_node_client::send_data_to_client() {
-	if (send_buffer_end_pos-send_buffer_begin_pos<=0)
-		return;
-
-	int len = write(this->fd, send_buffer + send_buffer_begin_pos, send_buffer_end_pos-send_buffer_begin_pos);
-
-	LOG_DEBUG("%s %d: write to fd: %u: ret %d, end pos = %d, begin pos = %d", __PRETTY_FUNCTION__, __LINE__, fd, len, send_buffer_end_pos, send_buffer_begin_pos);
-
-	if (len == -1) {  //发送失败
-		if (errno == EINTR || errno == EAGAIN) {
-			// TODO: 
-			// int result = event_add(&this->ev_write, NULL);
-			// if (0 != result) {
-			// 	LOG_ERR("[%s : %d]: event add failed, result: %d", __PRETTY_FUNCTION__, __LINE__, result);
-			// 	return;
-			// }
-		}
-	}
-	else if (send_buffer_begin_pos + len < send_buffer_end_pos) {  //没发完
-		send_buffer_begin_pos += len;
-		// TODO: 
-		// int result = event_add(&this->ev_write, NULL);
-		// if (0 != result) {
-		// 	LOG_ERR("[%s : %d]: event add failed, result: %d", __PRETTY_FUNCTION__, __LINE__, result);
-		// 	return;
-		// }
-	}
-	else {  //发完了
-		send_buffer_begin_pos = send_buffer_end_pos = 0;
-		return;
-	}
-
-
-	/// 当数据发送完毕后pos归0
-//	if (send_buffer_begin_pos == send_buffer_end_pos) {
-//		send_buffer_begin_pos = send_buffer_end_pos = 0;
-//		return;
-//	}
-
-	if (send_buffer_end_pos>=MAX_CLIENT_SEND_BUFFER_SIZE/2 && (send_buffer_begin_pos/1024) > 0 && send_buffer_end_pos>send_buffer_begin_pos) {
-		int sz = send_buffer_end_pos - send_buffer_begin_pos;
-		memmove(send_buffer, send_buffer+send_buffer_begin_pos, sz);
-		send_buffer_begin_pos = 0;
-		send_buffer_end_pos = sz;
-	}
-}

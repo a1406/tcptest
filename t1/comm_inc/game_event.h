@@ -9,6 +9,8 @@ extern "C" {
 }
 
 #define UNUSED(x) (void)(x)
+#define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
+
 
 #ifdef LOG_FORMAT_CHECK  /*only for format check*/
 #define LOG_ERR   printf
@@ -51,6 +53,6 @@ int add_timer(struct timeval t, void *arg);
 void init_mycat();
 void change_mycat();
 
-#define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
+int send_one_buffer(conn_node_base *node, char *buffer, uint32_t len);
 
 #endif

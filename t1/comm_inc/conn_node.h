@@ -172,7 +172,7 @@ public:
 
 	virtual int get_listen_fd() = 0;
 	virtual int recv_func(evutil_socket_t fd) = 0;
-	virtual int send_one_msg(PROTO_HEAD *head, uint8_t force);	
+	virtual int send_one_msg(PROTO_HEAD *head);	
 	virtual struct event* get_write_event() { return NULL; }
 	
 	evutil_socket_t fd;
@@ -185,25 +185,25 @@ public:
 	uint32_t max_buf_len;
 
 	char *send_buffer;
-	int32_t send_buffer_begin_pos;
-	int32_t send_buffer_end_pos;
-	int32_t send_buffer_size;
+	uint32_t send_buffer_begin_pos;
+	uint32_t send_buffer_end_pos;
+	uint32_t send_buffer_size;
 
 	aeFileProc *on_write;
-	
-	static inline PROTO_HEAD *get_send_buf(uint16_t msg_id, uint16_t seq)
-	{
-		PROTO_HEAD *head = (PROTO_HEAD *)global_send_buf;
-		head->msg_id = ENDION_FUNC_2(msg_id);
-		head->seq = seq;
-		return head;
-	}
 
-	static inline uint8_t *get_send_data()
-	{
-		PROTO_HEAD *head = (PROTO_HEAD *)global_send_buf;
-		return (uint8_t *)&head->data[0];
-	}
+	// static inline PROTO_HEAD *get_send_buf(uint16_t msg_id, uint16_t seq)
+	// {
+	// 	PROTO_HEAD *head = (PROTO_HEAD *)global_send_buf;
+	// 	head->msg_id = ENDION_FUNC_2(msg_id);
+	// 	head->seq = seq;
+	// 	return head;
+	// }
+
+	// static inline uint8_t *get_send_data()
+	// {
+	// 	PROTO_HEAD *head = (PROTO_HEAD *)tmp_send_buf;
+	// 	return (uint8_t *)&head->data[0];
+	// }
 	
 	static inline void add_extern_data(PROTO_HEAD *head, EXTERN_DATA *data)
 	{
@@ -226,7 +226,6 @@ public:
 			head->len = ENDION_FUNC_4(old_len + sizeof(EXTERN_DATA));
 */			
 	}
-	static uint8_t global_send_buf[MAX_GLOBAL_SEND_BUF + sizeof(EXTERN_DATA)];
 //protected:
 
 	inline uint32_t get_real_head_len(PROTO_HEAD *head)
@@ -315,17 +314,18 @@ public:
 
 	int get_one_buf();
 	int remove_one_buf();
+	void send_data_to_client();
 };
 
 
 int fast_send_msg_base(conn_node_base* node, EXTERN_DATA *extern_data, uint16_t msg_id, size_t size, uint16_t seq);
 
-template<typename PACK_STRUCT>
-int fast_send_msg(conn_node_base* node, EXTERN_DATA *extern_data, uint16_t msg_id, size_t(*func)(const PACK_STRUCT *, uint8_t *), PACK_STRUCT& obj, uint16_t seq = 0)
-{
-	size_t size = (*func)(&obj, node->get_send_data());
-	return fast_send_msg_base(node, extern_data, msg_id, size, seq);
-}
+// template<typename PACK_STRUCT>
+// int fast_send_msg(conn_node_base* node, EXTERN_DATA *extern_data, uint16_t msg_id, size_t(*func)(const PACK_STRUCT *, uint8_t *), PACK_STRUCT& obj, uint16_t seq = 0)
+// {
+// 	size_t size = (*func)(&obj, node->get_send_data());
+// 	return fast_send_msg_base(node, extern_data, msg_id, size, seq);
+// }
 
 
 

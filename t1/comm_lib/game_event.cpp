@@ -133,8 +133,11 @@ int add_timer(struct timeval t, void *arg)
 	// return evtimer_add(event_timer, &t);
 }
 
-static void cb_send_func(aeEventLoop *el, int fd, void *privdata, int mask)
+static void cb_send_func(aeEventLoop *el, int fd, void *arg, int mask)
 {
+	assert(arg);
+	conn_node_base *client = (conn_node_base *)arg;
+	client->send_data_to_client();
 }
 
 static void cb_recv_func(aeEventLoop *el, int fd, void *privdata, int mask)
@@ -150,6 +153,46 @@ static void cb_recv_func(aeEventLoop *el, int fd, void *privdata, int mask)
 		return;
 
 	remove_listen_callback_event(client->get_listen_fd(), client);	
+}
+
+int send_one_buffer(conn_node_base *node, char *buffer, uint32_t len)
+{
+#if 1
+#ifdef FLOW_MONITOR
+	add_one_client_answer(head);
+#endif
+	if (node->send_buffer_end_pos+len >= node->send_buffer_size) {  ///缓冲区溢出, 关闭连接
+		LOG_DEBUG("[%s: %d]: fd: %d: send msg len[%d], begin[%d]end[%d] buffer full", __PRETTY_FUNCTION__, __LINE__, node->fd, len, node->send_buffer_begin_pos, node->send_buffer_end_pos);
+		return -1;
+	}
+
+	if (node->send_buffer_begin_pos == node->send_buffer_end_pos)
+	{
+		if (aeCreateFileEvent(global_el, node->fd, AE_WRITABLE, cb_send_func, node) != AE_OK)
+		{
+			LOG_DEBUG("[%s: %d]: fd: %d: createfileevent failed", __PRETTY_FUNCTION__, __LINE__, node->fd);
+			return -10;			
+		}
+	}
+
+	memcpy(node->send_buffer+node->send_buffer_end_pos, buffer, len);
+//	encoder_data((PROTO_HEAD*)(node->send_buffer+send_buffer_end_pos));
+
+	node->send_buffer_end_pos += len;
+
+	if (node->send_buffer_begin_pos == 0) {
+		// TODO: 
+		// int result = event_add(&this->ev_write, NULL);
+		// if (0 != result) {
+		// 	LOG_ERR("[%s : %d]: event add failed, result: %d", __PRETTY_FUNCTION__, __LINE__, result);
+		// 	return result;
+		// }
+	}
+
+	return 0;
+#else
+	return conn_node_base::send_one_msg(head, force);
+#endif
 }
 
 #define MAX_ACCEPTS_PER_CALL 100

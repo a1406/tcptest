@@ -4,7 +4,7 @@
 #include "conn_node.h"
 #include "game_event.h"
 
-#define MAX_CLIENT_SEND_BUFFER_SIZE (1024*256)
+//#define MAX_CLIENT_SEND_BUFFER_SIZE (1024*256)
 
 class conn_node_client: public conn_node_base
 {
@@ -14,7 +14,6 @@ public:
 
 	virtual int get_listen_fd();
 	virtual int recv_func(evutil_socket_t fd);
-	virtual int send_one_msg(PROTO_HEAD *head, uint8_t force);
 
 	static conn_node_base *get_conn_node(int fd);
 	static void del_conn_node(conn_node_base *node);	
@@ -30,10 +29,7 @@ public:
 	static conn_node_client * get_nodes_by_player_id(uint64_t player_id);
 	static conn_node_client * get_nodes_by_open_id(uint32_t open_id);	
 
-
-public:
 	void send_data_to_client();
-
 
 public:
 	uint16_t login_seq;  //登录的seq号，登录包返回的时候比较这个seq，不一致则丢弃
@@ -47,7 +43,6 @@ private:
 	void memmove_data();
 	void remove_buflen(int len);
 
-	int send_one_buffer(char *buffer, uint32_t len);	
 	int decode_and_check_crc(PROTO_HEAD *head);
 	int dispatch_message();
 	int transfer_to_gameserver();
