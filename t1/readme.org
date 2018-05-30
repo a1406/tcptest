@@ -1,0 +1,33 @@
+* 监听
+int game_add_listen_event(int port, get_conn_node cb1, del_conn_node cb2, const char *name)
+传入创建和删除node对象的函数，返回listen的fd。
+
+* 连接
+int game_add_connect_event(conn_node_base *node, char *addr, int port, on_connected cb1, on_disconnected cb2)
+传入连接的node对象，还有连接成功和失败的函数
+
+* 定时器
+long long aeCreateTimeEvent(aeEventLoop *eventLoop, long long milliseconds,
+        aeTimeProc *proc, void *clientData,
+        aeEventFinalizerProc *finalizerProc)
+传入定时器函数和时间。
+定时器函数返回值决定了下一个定时器时间，返回-1表示要删除该定时器
+
+* 发送数据
+int conn_node_base::send_one_msg(PROTO_HEAD *head)
+
+* 接收数据
+virtual int recv_func(evutil_socket_t fd) = 0;
+
+* 主动断开连接
+void remove_listen_callback_event(int listen_fd, conn_node_base *node)
+
+* 连接断开事件
+根据fd找到回调函数
+
+* 连接建立事件
+
+* conn_node_base
+需要实现：
+recv_func: 接收数据的接口
+get_listen_fd: ?
