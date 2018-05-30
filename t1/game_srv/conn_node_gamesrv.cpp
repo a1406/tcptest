@@ -21,6 +21,18 @@ void conn_node_gamesrv::send_data_to_connsrv()
 {
 }
 
+void conn_node_gamesrv::on_connected(conn_node_base *node)
+{
+}
+void conn_node_gamesrv::on_disconnected(conn_node_base *node)
+{
+}
+
+int conn_node_gamesrv::get_listen_fd()
+{
+	return fd;
+}
+
 int conn_node_gamesrv::recv_func(evutil_socket_t fd)
 {
 	PROTO_HEAD *head;

@@ -47,7 +47,7 @@ int game_add_listen_event(int port, get_conn_node cb1, del_conn_node cb2, const 
 
 typedef void (*on_connected)(conn_node_base *);
 typedef void (*on_disconnected)(conn_node_base *);
-int game_add_connect_event(char *addr, int port, on_connected cb1, on_disconnected cb2);
+int game_add_connect_event(conn_node_base *node, char *addr, int port, on_connected cb1, on_disconnected cb2);
 
 void remove_listen_callback_event(int listen_fd, conn_node_base *client);
 int create_new_socket(int set_opt);

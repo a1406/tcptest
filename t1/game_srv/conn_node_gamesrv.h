@@ -11,6 +11,9 @@ public:
 	virtual ~conn_node_gamesrv();
 
 	virtual int recv_func(evutil_socket_t fd);
+	virtual int get_listen_fd();
+	static void on_connected(conn_node_base *node);
+	static void on_disconnected(conn_node_base *node);	
 
 	void send_data_to_connsrv();
 

@@ -247,7 +247,29 @@ int game_add_listen_event(int port, get_conn_node cb1, del_conn_node cb2, const 
 	return (fd);
 }
 
-int game_add_connect_event(char *addr, int port, on_connected cb1, on_disconnected cb2)
+static void connect_func(aeEventLoop *el, int fd, void *privdata, int mask)
+{
+	conn_node_base *node = (conn_node_base *)privdata;
+	if (!(node->flag & NODE_CONNECTED))
+	{
+		int err = 0;
+		socklen_t errlen = sizeof(err);
+		if (getsockopt(fd, SOL_SOCKET, SO_ERROR, &err, &errlen) == -1) {
+			LOG_ERR("getsocktopt failed connect failed");
+			return;
+		}
+		if (err) {
+			remove_listen_callback_event(node->fd, node);
+			LOG_ERR("connect failed, err = %d", err);
+			return;
+		}
+		node->flag |= NODE_CONNECTED;
+
+	}
+	// TODO: 
+}
+
+int game_add_connect_event(conn_node_base *node, char *addr, int port, on_connected cb1, on_disconnected cb2)
 {
 	assert(cb1);
 	assert(cb2);	
@@ -299,7 +321,13 @@ end:
     freeaddrinfo(servinfo);
 
 	connect_maps[s] = cb1;
-	disconnect_maps[s] = cb2;	
+	disconnect_maps[s] = cb2;
+
+	node->flag = 0;
+	node->fd = s;
+	aeCreateFileEvent(global_el, s, AE_READABLE, connect_func, node);
+	aeCreateFileEvent(global_el, s, AE_WRITABLE, connect_func, node);
+	
 	return s;
 }
 

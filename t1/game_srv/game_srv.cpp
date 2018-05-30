@@ -33,6 +33,7 @@ int cb_connsrv_timer(struct aeEventLoop *eventLoop, long long id, void *clientDa
 	return (1000);
 }
 
+conn_node_gamesrv game_node;
 int main(int argc, char **argv)
 {
 	int ret = 0;
@@ -89,9 +90,9 @@ int main(int argc, char **argv)
 		goto done;
 	}
 
-	// ret = game_add_listen_event(port, conn_node_gamesrv::get_conn_node, conn_node_client::del_conn_node, "client");
- 	// if (ret < 0)
- 	// 	goto done;
+	ret = game_add_connect_event(&game_node, (char *)"127.0.0.1", port, conn_node_gamesrv::on_connected, conn_node_gamesrv::on_disconnected);
+ 	if (ret < 0)
+		goto done;
 	// conn_node_client::listen_fd = ret;
 	
 	if (SIG_ERR == signal(SIGPIPE,SIG_IGN)) {
