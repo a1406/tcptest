@@ -11,10 +11,16 @@
 
 conn_node_gamesrv::conn_node_gamesrv()
 {
+	buf = (uint8_t *)malloc(128 * 1024);
+	max_buf_len = 128 * 1024;
+	send_buffer = (char *)malloc(128 * 1024);
+	send_buffer_size = 128 * 1024;
 }
 
 conn_node_gamesrv::~conn_node_gamesrv()
 {
+	free(buf);
+	free(send_buffer);
 }
 
 void conn_node_gamesrv::send_data_to_connsrv()

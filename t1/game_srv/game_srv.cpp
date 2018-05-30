@@ -26,13 +26,6 @@ int init_conn_client_map()
 	return (0);
 }
 
-int cb_connsrv_timer(struct aeEventLoop *eventLoop, long long id, void *clientData)
-{
-	LOG_DEBUG("%s: id = %lld", __FUNCTION__, id);
-	printf("%s id = %lld\n", __FUNCTION__, id);
-	return (1000);
-}
-
 conn_node_gamesrv game_node;
 int main(int argc, char **argv)
 {
@@ -65,7 +58,7 @@ int main(int argc, char **argv)
 	}
 
 	uint64_t pid = write_pid_file();		
-	LOG_INFO("%s %d: conn_srv run %lu",	__FUNCTION__, __LINE__, pid);
+	LOG_INFO("%s %d: game_srv run %lu",	__FUNCTION__, __LINE__, pid);
 	if (init_conn_client_map() != 0) {
 		LOG_ERR("init client map failed");
 		goto done;
@@ -99,8 +92,6 @@ int main(int argc, char **argv)
 		LOG_ERR("set sigpipe ign failed");		
 		return (0);
 	}
-
-	aeCreateTimeEvent(global_el, 1000, cb_connsrv_timer, NULL, NULL);
 
 	aeMain(global_el);
 	aeDeleteEventLoop(global_el);

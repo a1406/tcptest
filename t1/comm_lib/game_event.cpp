@@ -144,16 +144,6 @@ int send_one_buffer(conn_node_base *node, char *buffer, uint32_t len)
 //	encoder_data((PROTO_HEAD*)(node->send_buffer+send_buffer_end_pos));
 
 	node->send_buffer_end_pos += len;
-
-	if (node->send_buffer_begin_pos == 0) {
-		// TODO: 
-		// int result = event_add(&this->ev_write, NULL);
-		// if (0 != result) {
-		// 	LOG_ERR("[%s : %d]: event add failed, result: %d", __PRETTY_FUNCTION__, __LINE__, result);
-		// 	return result;
-		// }
-	}
-
 	return 0;
 #else
 	return conn_node_base::send_one_msg(head, force);
@@ -197,6 +187,7 @@ static void acceptTcpHandler(aeEventLoop *el, int fd, void *privdata, int mask)
 
 		aeCreateFileEvent(el, node->fd, AE_READABLE, cb_recv_func, node);
 
+		node->on_connected();
 		LOG_DEBUG("fd %d accept from %s %d", node->fd, cip, cport);
     }
 }
@@ -236,7 +227,12 @@ static void connect_func(aeEventLoop *el, int fd, void *privdata, int mask)
 		node->on_connected();
 
 	}
-	// TODO: 
+
+    aeFileEvent *fe = &global_el->events[fd];	
+	fe->rfileProc = cb_recv_func;
+	aeDeleteFileEvent(global_el, fd, AE_WRITABLE);
+	
+	node->recv_func(fd);
 }
 
 int game_add_connect_event(conn_node_base *node, char *addr, int port)
