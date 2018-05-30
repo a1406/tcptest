@@ -1,5 +1,5 @@
 add_definitions(-g -O0 -Wall -Werror -DDEBUG_MEM_POOL -DDEBUG -D__SERVER__  -fpic -fstack-protector-all -DBIG_JOINS=1  -fno-strict-aliasing -pipe)
-add_definitions(-I${LUA_INCLUDE_DIR} -D__STDC_LIMIT_MACROS)
+add_definitions(-I${LUA_INCLUDE_DIR}/ -D__STDC_LIMIT_MACROS)
 if(MEMERR)
 #   message("defined memerr!!!!!!!!!!")
    add_definitions(-fsanitize=address -DMEMERR)
