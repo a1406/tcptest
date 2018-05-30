@@ -1,4 +1,5 @@
 #include <signal.h>
+#include "shm_ipc.h"
 #include <assert.h>
 #include <search.h>
 #include <unistd.h>
@@ -32,6 +33,9 @@ int cb_connsrv_timer(struct aeEventLoop *eventLoop, long long id, void *clientDa
 	printf("%s id = %lld\n", __FUNCTION__, id);
 	return (3000);
 }
+
+shm_ipc_obj *ipc_game_rd;
+shm_ipc_obj *ipc_game_wr;
 
 int main(int argc, char **argv)
 {
@@ -77,6 +81,15 @@ int main(int argc, char **argv)
 	file = fopen("../server_info.ini", "r");
 	if (!file) {
 		LOG_ERR("open server_info.ini failed[%d]", errno);				
+		ret = -1;
+		goto done;
+	}
+
+	ipc_game_rd = init_shm_from_config("conn_game_shm", file);
+	ipc_game_wr = init_shm_from_config("game_conn_shm", file);
+	if (!ipc_game_rd || !ipc_game_wr)
+	{
+		LOG_ERR("init ipc shm failed");
 		ret = -1;
 		goto done;
 	}

@@ -1,7 +1,8 @@
 #include "shm_ipc.h"
 #include "game_event.h"
+#include "oper_config.h"
 
-shm_ipc_obj *init_shm_ipc_obj(int key, int size, bool create)
+static shm_ipc_obj *init_shm_ipc_obj(int key, int size, bool create)
 {
 	int flag = 0666;
 	if (create)
@@ -26,6 +27,31 @@ shm_ipc_obj *init_shm_ipc_obj(int key, int size, bool create)
 	}
 	
 	return (ret);
+}
+
+shm_ipc_obj *init_shm_from_config(const char *prefix, FILE *file)
+{
+	char *line;
+	int addr;
+	int size;
+	char t[128];
+
+	sprintf(t, "%s_addr", prefix);
+	line = get_first_key(file, t);
+	addr = atoi(get_value(line));
+	if (addr <= 0) {
+		LOG_ERR("config file wrong, no %s", t);
+		return NULL;
+	}
+    sprintf(t, "%s_size", prefix);									  
+    line = get_first_key(file, t);
+	size = atoi(get_value(line));
+	if (size <= 0) {
+		LOG_ERR("config file wrong, no %s", t);
+		return NULL;
+	}
+
+	return init_shm_ipc_obj(addr, size, true);
 }
 
 void rm_shm_ipc_obj(int shmid)
