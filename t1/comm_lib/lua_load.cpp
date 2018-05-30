@@ -15,8 +15,8 @@ extern "C"
 #include "lualib.h"
 #include "lauxlib.h"
 };
-#include "sproto.h"
-#include "sprotoc_common.h"
+#include "./sproto.h"
+#include "./sprotoc_common.h"
 
 #define UNUSED(x) (void)(x)
 
@@ -102,7 +102,7 @@ int traverse_array(lua_State *L, struct field *f, void *data, uint32_t *n_size)
 	if (f_type == SPROTO_TSTRING)
 	{
 		*n_size = vec_str.size();
-		char ***p = (char ***)(data + f->offset + sizeof(uint32_t));
+		char ***p = (char ***)((char *)data + f->offset + sizeof(uint32_t));
 		*p = (char **)malloc(sizeof(char *) * (*n_size));
 		for (size_t i = 0; i < (*n_size); ++i)
 			(*p)[i] = vec_str[i];
@@ -110,7 +110,7 @@ int traverse_array(lua_State *L, struct field *f, void *data, uint32_t *n_size)
 	else if (f_type == SPROTO_TDOUBLE)
 	{
 		*n_size = vec_double.size();
-		double **p = (double **)(data + f->offset + sizeof(uint32_t));
+		double **p = (double **)((char *)data + f->offset + sizeof(uint32_t));
 		(*p) = (double *)malloc(sizeof(double) * (*n_size));
 		for (size_t i = 0; i < (*n_size); ++i)
 			(*p)[i] = vec_double[i];		
@@ -118,7 +118,7 @@ int traverse_array(lua_State *L, struct field *f, void *data, uint32_t *n_size)
 	else if (f_type == SPROTO_TINTEGER)
 	{
 		*n_size = vec_int.size();
-		uint64_t **p = (uint64_t **)(data + f->offset + sizeof(uint32_t));
+		uint64_t **p = (uint64_t **)((char *)data + f->offset + sizeof(uint32_t));
 		(*p) = (uint64_t *)malloc(sizeof(uint64_t) * (*n_size));
 		for (size_t i = 0; i < (*n_size); ++i)
 			(*p)[i] = vec_int[i];		
@@ -126,7 +126,7 @@ int traverse_array(lua_State *L, struct field *f, void *data, uint32_t *n_size)
 	else if (f_type == SPROTO_TSTRUCT)
 	{
 		*n_size = vec_void.size();
-		void ***p = (void ***)(data + f->offset + sizeof(uint32_t));
+		void ***p = (void ***)((char *)data + f->offset + sizeof(uint32_t));
 		(*p) = (void **)malloc(sizeof(void *) * (*n_size));
 		for (size_t i = 0; i < (*n_size); ++i)
 			(*p)[i] = vec_void[i];		
@@ -175,11 +175,11 @@ int traverse_table(lua_State *L, struct sproto_type *sproto_type, void *data)
 				assert(f->type == SPROTO_TINTEGER || f->type == SPROTO_TDOUBLE);
 
 				if (f->type == SPROTO_TINTEGER)
-					*(uint64_t *)(data + f->offset) = (uint64_t)(lua_tonumber(L, -1));
+					*(uint64_t *)((char *)data + f->offset) = (uint64_t)(lua_tonumber(L, -1));
 				else
 				{
 					double x = lua_tonumber(L, -1);
-					*(double *)(data + f->offset) = x;
+					*(double *)((char *)data + f->offset) = x;
 				}
 
 //				printf("value = %d\n", (int)(lua_tonumber(L, -1)));
@@ -188,7 +188,7 @@ int traverse_table(lua_State *L, struct sproto_type *sproto_type, void *data)
 				if (!f)
 					break;				
 				assert(f->type == SPROTO_TSTRING);
-				*(char **)(data + f->offset) = strdup(lua_tostring(L, -1));				
+				*(char **)((char *)data + f->offset) = strdup(lua_tostring(L, -1));				
 //				printf("value = %s\n", lua_tostring(L, -1));
 				break;
 			case LUA_TTABLE:
@@ -199,7 +199,7 @@ int traverse_table(lua_State *L, struct sproto_type *sproto_type, void *data)
 				}
 				if (f->type & SPROTO_TARRAY)
 				{
-					uint32_t *n_size = (uint32_t *)(data + f->offset);
+					uint32_t *n_size = (uint32_t *)((char *)data + f->offset);
 					traverse_array(L, f, data, n_size);
 				}
 				else
@@ -208,8 +208,8 @@ int traverse_table(lua_State *L, struct sproto_type *sproto_type, void *data)
 					assert(f->type == SPROTO_TSTRUCT);
 					assert(f->st);
 //				printf("value = new table\n");
-					*(void **)(data + f->offset) = malloc(f->st->c_size);
-					traverse_table(L, f->st, *(void **)(data + f->offset));
+					*(void **)((char *)data + f->offset) = malloc(f->st->c_size);
+					traverse_table(L, f->st, *(void **)((char *)data + f->offset));
 				}
 				break;
 			default:
