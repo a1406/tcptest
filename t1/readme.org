@@ -31,3 +31,15 @@ void remove_listen_callback_event(int listen_fd, conn_node_base *node)
 需要实现：
 recv_func: 接收数据的接口
 get_listen_fd: ?
+
+* todo
+** conn_node_base添加事件
+1. 连接建立
+2. 连接断开
+
+** conn_node_base添加接口
+1. 断开连接
+
+** 添加interface, 包含创建，删除node对象的函数
+
+
