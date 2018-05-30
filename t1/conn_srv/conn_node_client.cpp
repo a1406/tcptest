@@ -264,16 +264,19 @@ conn_node_base *conn_node_client::get_conn_node(int fd)
 	return ret;
 }
 
-void conn_node_client::del_conn_node(conn_node_base *node)
+int conn_node_client::del()
 {
-	conn_node_client *client = (conn_node_client *)node;
-	free(client->buf);
-	free(client->send_buffer);	
+	assert(fd > 0);
+	free(buf);
+	free(send_buffer);	
 		
-	map_fd_nodes.erase(client->fd);
-	map_player_id_nodes.erase(client->player_id);
-	map_open_id_nodes.erase(client->open_id);	
-	delete client;
+	map_fd_nodes.erase(fd);
+	if (player_id > 0)
+		map_player_id_nodes.erase(player_id);
+	if (open_id > 0)
+		map_open_id_nodes.erase(open_id);	
+	delete this;
+	return (0);
 }
 
 int conn_node_client::add_map_fd_nodes(conn_node_client *client)

@@ -16,7 +16,7 @@ public:
 	virtual int recv_func(evutil_socket_t fd);
 
 	static conn_node_base *get_conn_node(int fd);
-	static void del_conn_node(conn_node_base *node);	
+	int del();	
 	
 	static std::map<evutil_socket_t, conn_node_client *> map_fd_nodes;
 	static std::map<uint64_t, conn_node_client *> map_player_id_nodes;

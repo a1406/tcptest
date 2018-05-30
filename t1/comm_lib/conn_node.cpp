@@ -293,6 +293,8 @@ int  conn_node_base::disconnect()
 	aeDeleteFileEvent(global_el, fd, AE_READABLE);
 	aeDeleteFileEvent(global_el, fd, AE_WRITABLE);
 	fd = 0;
+	
+	del();
 	return (0);
 }
 int  conn_node_base::del()
