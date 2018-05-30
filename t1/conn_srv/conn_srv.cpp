@@ -45,6 +45,16 @@ static void cb_recv_shm_ipcs(struct aeEventLoop *eventLoop)
 		{
 			break;
 		}
+
+		if (conn_node_client::map_fd_nodes.size() > 0)
+		{
+			conn_node_client *client = conn_node_client::map_fd_nodes.begin()->second;
+			if (client->send_one_msg(head) < 0)
+			{
+				client->disconnect();				
+			}
+		}
+		
 		try_read_reset(ipc_game_rd);		
 	}
 }
