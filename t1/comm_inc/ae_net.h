@@ -33,7 +33,6 @@ extern aeEventLoop *global_el;
 
 void anetSetError(char *err, const char *fmt, ...);
 int anetSetBlock(int fd, int block);
-int connect_server(char *addr, int port);
 int anetTcp6Server(char *err, int port, char *bindaddr, int backlog);
 int anetTcpServer(char *err, int port, char *bindaddr, int backlog);
 int anetTcpAccept(char *err, int s, char *ip, size_t ip_len, int *port);

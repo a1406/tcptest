@@ -21,6 +21,8 @@ log4c_category_t* mycat = NULL;
 
 std::map<int, get_conn_node> listen_get_conn_maps;
 std::map<int, del_conn_node> listen_del_conn_maps;
+std::map<int, on_connected> connect_maps;
+std::map<int, on_disconnected> disconnect_maps;
 
 int game_event_init()
 {
@@ -245,10 +247,60 @@ int game_add_listen_event(int port, get_conn_node cb1, del_conn_node cb2, const 
 	return (fd);
 }
 
-int game_add_connect_event(struct sockaddr *sa, int socklen, conn_node_base *client)
+int game_add_connect_event(char *addr, int port, on_connected cb1, on_disconnected cb2)
 {
-	// TODO: 
-	return (0);
+	assert(cb1);
+	assert(cb2);	
+    int s = -1, rv;
+    char portstr[6];  /* strlen("65535") + 1; */
+    struct addrinfo hints, *servinfo, *p;
+
+    snprintf(portstr,sizeof(portstr),"%d",port);
+    memset(&hints,0,sizeof(hints));
+    hints.ai_family = AF_UNSPEC;
+    hints.ai_socktype = SOCK_STREAM;
+
+    if ((rv = getaddrinfo(addr,portstr,&hints,&servinfo)) != 0) {
+        return -1;
+    }
+    for (p = servinfo; p != NULL; p = p->ai_next) {
+        /* Try to create the socket and to connect it.
+         * If we fail in the socket() call, or on connect(), we retry with
+         * the next entry in servinfo. */
+        if ((s = socket(p->ai_family,p->ai_socktype,p->ai_protocol)) == -1)
+            continue;
+		int yes = 1;
+		if (setsockopt(s, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(yes)) == -1)
+			goto error;
+        if (anetSetBlock(s, 0) != 0)
+            goto error;
+        if (connect(s,p->ai_addr,p->ai_addrlen) == -1) {
+            /* If the socket is non-blocking, it is ok for connect() to
+             * return an EINPROGRESS error here. */
+            if (errno == EINPROGRESS)
+                goto end;
+            close(s);
+            s = -1;
+            continue;
+        }
+
+        /* If we ended an iteration of the for loop without errors, we
+         * have a connected socket. Let's return to the caller. */
+        goto end;
+    }
+
+error:
+    if (s != -1) {
+        close(s);
+        s = -1;
+    }
+
+end:
+    freeaddrinfo(servinfo);
+
+	connect_maps[s] = cb1;
+	disconnect_maps[s] = cb2;	
+	return s;
 }
 
 static const char* dated_r_format(

@@ -36,57 +36,6 @@ int anetSetBlock(int fd, int block)
     return 0;
 }
 
-int connect_server(char *addr, int port)
-{
-    int s = -1, rv;
-    char portstr[6];  /* strlen("65535") + 1; */
-    struct addrinfo hints, *servinfo, *p;
-
-    snprintf(portstr,sizeof(portstr),"%d",port);
-    memset(&hints,0,sizeof(hints));
-    hints.ai_family = AF_UNSPEC;
-    hints.ai_socktype = SOCK_STREAM;
-
-    if ((rv = getaddrinfo(addr,portstr,&hints,&servinfo)) != 0) {
-        return -1;
-    }
-    for (p = servinfo; p != NULL; p = p->ai_next) {
-        /* Try to create the socket and to connect it.
-         * If we fail in the socket() call, or on connect(), we retry with
-         * the next entry in servinfo. */
-        if ((s = socket(p->ai_family,p->ai_socktype,p->ai_protocol)) == -1)
-            continue;
-		int yes = 1;
-		if (setsockopt(s, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(yes)) == -1)
-			goto error;
-        if (anetSetBlock(s, 0) != 0)
-            goto error;
-        if (connect(s,p->ai_addr,p->ai_addrlen) == -1) {
-            /* If the socket is non-blocking, it is ok for connect() to
-             * return an EINPROGRESS error here. */
-            if (errno == EINPROGRESS)
-                goto end;
-            close(s);
-            s = -1;
-            continue;
-        }
-
-        /* If we ended an iteration of the for loop without errors, we
-         * have a connected socket. Let's return to the caller. */
-        goto end;
-    }
-
-error:
-    if (s != -1) {
-        close(s);
-        s = -1;
-    }
-
-end:
-    freeaddrinfo(servinfo);
-	return s;
-}
-
 // static on_disconnect_func disconnect_func;
 // void set_disconnect_callback(on_disconnect_func func)
 // {
