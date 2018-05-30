@@ -10,7 +10,6 @@
 #include <string.h>
 #include <pthread.h>
 #include <netinet/tcp.h>
-#include "listen_node.h"
 
 extern "C" {
 #include "log4c.h"

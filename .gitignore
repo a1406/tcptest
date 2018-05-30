@@ -31,7 +31,6 @@ pid.txt
 *.tgz
 *.lo
 *.la
-server_info.ini
 *.tar.gz
 *.spb
 *_pb2.py

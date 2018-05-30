@@ -1,8 +1,8 @@
 #ifndef GAME_EVENT_H__
 #define GAME_EVENT_H__
 #include <errno.h>
+#include "conn_node.h"
 #include <stdlib.h>
-#include "listen_node.h"
 
 extern "C" {
 #include "log4c.h"

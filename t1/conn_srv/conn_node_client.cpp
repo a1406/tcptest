@@ -11,31 +11,11 @@
 
 conn_node_client::conn_node_client()
 {
-	open_id = 0;
-	player_id = 0;
-
-	send_buffer_begin_pos = 0;
-	send_buffer_end_pos = 0;
-
-	max_buf_len = 10 * 1024;
-	buf = (uint8_t *)malloc(max_buf_len + sizeof(EXTERN_DATA));
-	assert(buf);
 }
 
 conn_node_client::~conn_node_client()
 {
-	LOG_DEBUG("%s %d: openid[%u] fd[%u] playerid[%lu]", __PRETTY_FUNCTION__, __LINE__, open_id, fd, player_id);
-	map_fd_nodes.erase(fd);
-	if (open_id > 0) {
-		map_open_id_nodes.erase(open_id);
-	}
-	if (player_id > 0) {
-		map_player_id_nodes.erase(player_id);
-	} else {
-		return;
-	}
-
-	send_player_exit();
+	send_player_exit();	
 }
 
 int conn_node_client::decode_and_check_crc(PROTO_HEAD *head)
@@ -86,28 +66,28 @@ int conn_node_client::send_hello_resp()
 	return (0);
 }
 
-void conn_node_client::memmove_data()
-{
-	int len = buf_size();
-	if (len == 0)
-		return;
-	memmove(&buf[0], buf_head(), len);
-	pos_begin = 0;
-	pos_end = len;
+// void conn_node_client::memmove_data()
+// {
+// 	int len = buf_size();
+// 	if (len == 0)
+// 		return;
+// 	memmove(&buf[0], buf_head(), len);
+// 	pos_begin = 0;
+// 	pos_end = len;
 
-	LOG_DEBUG("%s %d: memmove happened, len = %d", __PRETTY_FUNCTION__, fd, len);
-}
-void conn_node_client::remove_buflen(int len)
-{
-	assert(len <= buf_size());
-	if (len == buf_size())
-	{
-		pos_begin = pos_end = 0;
-		return;
-	}
-	pos_begin += len;
-	return;
-}
+// 	LOG_DEBUG("%s %d: memmove happened, len = %d", __PRETTY_FUNCTION__, fd, len);
+// }
+// void conn_node_client::remove_buflen(int len)
+// {
+// 	assert(len <= buf_size());
+// 	if (len == buf_size())
+// 	{
+// 		pos_begin = pos_end = 0;
+// 		return;
+// 	}
+// 	pos_begin += len;
+// 	return;
+// }
 
 int conn_node_client::get_listen_fd()
 {
@@ -276,6 +256,8 @@ conn_node_base *conn_node_client::get_conn_node(int fd)
 	ret->max_buf_len = 128 * 1024;
 	ret->send_buffer = (char *)malloc(128 * 1024);
 	ret->send_buffer_size = 128 * 1024;
+	ret->open_id = 0;
+	ret->player_id = 0;
 
 	assert(map_fd_nodes.find(fd) == map_fd_nodes.end());
 	map_fd_nodes[fd] = ret;
@@ -284,7 +266,10 @@ conn_node_base *conn_node_client::get_conn_node(int fd)
 
 void conn_node_client::del_conn_node(conn_node_base *node)
 {
-	conn_node_client *client = (conn_node_client *)node;	
+	conn_node_client *client = (conn_node_client *)node;
+	free(client->buf);
+	free(client->send_buffer);	
+		
 	map_fd_nodes.erase(client->fd);
 	map_player_id_nodes.erase(client->player_id);
 	map_open_id_nodes.erase(client->open_id);	

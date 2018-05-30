@@ -40,8 +40,8 @@ public:
 	static int listen_fd;
 
 private:
-	void memmove_data();
-	void remove_buflen(int len);
+//	void memmove_data();
+//	void remove_buflen(int len);
 
 	int decode_and_check_crc(PROTO_HEAD *head);
 	int dispatch_message();

@@ -8,3 +8,4 @@ option(MEMERR
 
 add_subdirectory(comm_lib)
 add_subdirectory(conn_srv)
+add_subdirectory(game_srv)
