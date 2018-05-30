@@ -1,4 +1,5 @@
 #include <signal.h>
+#include "shm_ipc.h"
 #include <assert.h>
 #include <search.h>
 #include <unistd.h>
@@ -21,18 +22,52 @@
 #include <evhttp.h>
 #include "flow_record.h"
 
+#define TIMEOUT_MISEC 1000
+
 int init_conn_client_map()
 {
 	return (0);
 }
 
-conn_node_gamesrv game_node;
+static int cb_gamesrv_timer(struct aeEventLoop *eventLoop, long long id, void *clientData)
+{
+//	LOG_DEBUG("%s: id = %lld", __FUNCTION__, id);
+//	printf("%s id = %lld\n", __FUNCTION__, id);
+	return (TIMEOUT_MISEC);
+}
+
+static shm_ipc_obj *ipc_conn_rd;
+shm_ipc_obj *ipc_conn_wr;
+static void cb_recv_shm_ipcs(struct aeEventLoop *eventLoop)
+{
+	for (;;)
+	{
+		PROTO_HEAD *head = read_from_shm_ipc(ipc_conn_rd);
+		if (!head)
+		{
+			break;
+		}
+
+		assert(head->len == 19);
+		assert(memcmp(head->data, "tangpeilei", 10) == 0);
+		memcpy(head->data, "good night", 10);
+		if (write_to_shm_ipc(ipc_conn_wr, head) != 0)
+		{
+			LOG_ERR("%s: shm ipc no mem");
+			exit(0);
+		}
+		
+		try_read_reset(ipc_conn_rd);		
+	}
+}
+
+//conn_node_gamesrv game_node;
 int main(int argc, char **argv)
 {
 	int ret = 0;
 	FILE *file=NULL;
-	char *line;
-	int port;
+//	char *line;
+//	int port;
 
 	signal(SIGTERM, SIG_IGN);
 	
@@ -75,23 +110,35 @@ int main(int argc, char **argv)
 		goto done;
 	}
 
-	line = get_first_key(file, (char *)"conn_srv_gamesrv_port");
-	port = atoi(get_value(line));
-	if (port <= 0) {
-		LOG_ERR("config file wrong, no conn_srv_gamesrv_port");
+	ipc_conn_rd = init_shm_from_config("conn_game_shm", file, false);
+	ipc_conn_wr = init_shm_from_config("game_conn_shm", file, false);
+	if (!ipc_conn_rd || !ipc_conn_wr)
+	{
+		LOG_ERR("init ipc shm failed");
 		ret = -1;
 		goto done;
 	}
 
-	ret = game_add_connect_event(&game_node, (char *)"127.0.0.1", port);
- 	if (ret < 0)
-		goto done;
+// 	line = get_first_key(file, (char *)"conn_srv_gamesrv_port");
+// 	port = atoi(get_value(line));
+// 	if (port <= 0) {
+// 		LOG_ERR("config file wrong, no conn_srv_gamesrv_port");
+// 		ret = -1;
+// 		goto done;
+// 	}
+// 
+// 	ret = game_add_connect_event(&game_node, (char *)"127.0.0.1", port);
+// 	if (ret < 0)
+// 		goto done;
 	// conn_node_client::listen_fd = ret;
 	
 	if (SIG_ERR == signal(SIGPIPE,SIG_IGN)) {
 		LOG_ERR("set sigpipe ign failed");		
 		return (0);
 	}
+
+	aeSetAfterSleepProc(global_el, cb_recv_shm_ipcs);
+	aeCreateTimeEvent(global_el, TIMEOUT_MISEC, cb_gamesrv_timer, NULL, NULL);
 
 	aeMain(global_el);
 	aeDeleteEventLoop(global_el);

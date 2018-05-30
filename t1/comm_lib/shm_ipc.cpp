@@ -37,7 +37,7 @@ static shm_ipc_obj *init_shm_ipc_obj(int key, int size, bool create)
 	return (ret);
 }
 
-shm_ipc_obj *init_shm_from_config(const char *prefix, FILE *file)
+shm_ipc_obj *init_shm_from_config(const char *prefix, FILE *file, bool create)
 {
 	char *line;
 	int addr;
@@ -67,7 +67,7 @@ shm_ipc_obj *init_shm_from_config(const char *prefix, FILE *file)
 		return NULL;
 	}
 
-	return init_shm_ipc_obj(addr, size, true);
+	return init_shm_ipc_obj(addr, size, create);
 }
 
 void rm_shm_ipc_obj(int shmid)
@@ -110,11 +110,8 @@ static int shm_ipc_obj_avaliable_size(shm_ipc_obj *obj)
 	return obj->size - obj->write - SHM_DATA_OFFSET;
 }
 
-int write_to_shm_ipc(shm_ipc_obj *obj, PROTO_HEAD *head)
+static void shm_ipc_obj_write_impl(shm_ipc_obj *obj, PROTO_HEAD *head)
 {
-	if (shm_ipc_obj_avaliable_size(obj) < (int)head->len)
-		return -1;
-
 		//如果被重置了，那么要做memmove
 		//如果没有重置，随时可能被重置
 //	void *addr1 = (void *)head + head->len;  //未重置地址
@@ -129,7 +126,7 @@ int write_to_shm_ipc(shm_ipc_obj *obj, PROTO_HEAD *head)
 //		uint32_t t2 = 0;
 		if (__atomic_compare_exchange_n(&obj->write, &t1, addr1, false, __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST))
 		{
-			return (0);
+			return;
 		}
 //		else if (__atomic_compare_exchange_n(&obj->write, &t2, addr2, false, __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST))
 		else
@@ -137,7 +134,7 @@ int write_to_shm_ipc(shm_ipc_obj *obj, PROTO_HEAD *head)
 			assert(obj->write == 0);
 //			assert(obj->read == 0);
 			shm_ipc_move(obj, head);
-			return (0);
+			return;
 		}
 //		else
 //		{
@@ -145,6 +142,34 @@ int write_to_shm_ipc(shm_ipc_obj *obj, PROTO_HEAD *head)
 //		}
 			
 	}
+	return;
+}
+
+int write_to_shm_ipc_start(shm_ipc_obj *obj, int len)
+{
+	if (shm_ipc_obj_avaliable_size(obj) < len)
+		return -10;
+	return (0);	
+}
+int write_to_shm_ipc_end(shm_ipc_obj *obj, int len)
+{
+	assert(shm_ipc_obj_avaliable_size(obj) >= len);
+	PROTO_HEAD *head = WRITE_DATA(obj);
+	assert((int)head->len == len);
+
+	shm_ipc_obj_write_impl(obj, head);	
+	return (0);
+}
+
+int write_to_shm_ipc(shm_ipc_obj *obj, PROTO_HEAD *head)
+{
+	if (shm_ipc_obj_avaliable_size(obj) < (int)head->len)
+		return -10;
+
+	PROTO_HEAD *shm_head = WRITE_DATA(obj);
+	memcpy(shm_head, head, head->len);
+
+	shm_ipc_obj_write_impl(obj, shm_head);
 	return (0);
 }
 

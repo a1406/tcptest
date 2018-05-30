@@ -33,10 +33,12 @@ typedef struct SHM_IPC_OBJ
 //shm_ipc_obj *init_shm_ipc_obj(int key, int size, bool create);
 //void rm_shm_ipc_obj(int shmid);
 
-shm_ipc_obj *init_shm_from_config(const char *prefix, FILE *file);
+shm_ipc_obj *init_shm_from_config(const char *prefix, FILE *file, bool create);
 
 PROTO_HEAD *read_from_shm_ipc(shm_ipc_obj *obj);
 void try_read_reset(shm_ipc_obj *obj);
 
 int write_to_shm_ipc(shm_ipc_obj *obj, PROTO_HEAD *head);
+int write_to_shm_ipc_start(shm_ipc_obj *obj, int len);
+int write_to_shm_ipc_end(shm_ipc_obj *obj, int len);
 #endif /* SHM_IPC_H */

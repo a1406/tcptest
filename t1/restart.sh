@@ -10,7 +10,7 @@ ulimit -c unlimited
 
 cd conn_srv
 ./conn_srv -d
-
+sleep 1
 cd ../game_srv
 ./game_srv -d
 

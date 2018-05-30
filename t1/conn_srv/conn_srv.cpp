@@ -107,8 +107,8 @@ int main(int argc, char **argv)
 		goto done;
 	}
 
-	ipc_game_rd = init_shm_from_config("conn_game_shm", file);
-	ipc_game_wr = init_shm_from_config("game_conn_shm", file);
+	ipc_game_wr = init_shm_from_config("conn_game_shm", file, true);
+	ipc_game_rd = init_shm_from_config("game_conn_shm", file, true);
 	if (!ipc_game_rd || !ipc_game_wr)
 	{
 		LOG_ERR("init ipc shm failed");

@@ -58,7 +58,7 @@ static void recv_func(aeEventLoop *el, int fd, void *privdata, int mask)
 		{
 //			printf("recv len = %d, head len = %d, head buf = %s, head = %p, _t_index = %d\n", ret, head->len, head->data, head, _t_index[fd]);
 			assert(head->len == 19);
-			assert(memcmp(head->data, "tangpeilei", 10) == 0);			
+			assert(memcmp(head->data, "good night", 10) == 0);			
 			ret -= head->len;
 			head = (PROTO_HEAD *)((char *)head + head->len);
 			++_t_index[fd];
