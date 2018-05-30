@@ -19,35 +19,11 @@ log4c_category_t* trace_cat = NULL;
 log4c_category_t* info_cat = NULL;
 log4c_category_t* mycat = NULL;
 
-std::map<int, get_conn_node> listen_get_conn_maps;
-std::map<int, del_conn_node> listen_del_conn_maps;
-std::map<int, on_connected> connect_maps;
-std::map<int, on_disconnected> disconnect_maps;
-
 int game_event_init()
 {
 	global_el = aeCreateEventLoop(65536);
 	
 	return (0);
-}
-
-void remove_listen_callback_event(int listen_fd, conn_node_base *node)
-{
-	assert(listen_del_conn_maps.find(listen_fd) != listen_del_conn_maps.end());
-	del_conn_node callback = listen_del_conn_maps[listen_fd];
-
-	callback(node);
-	
-	node->flag |= NODE_DISCONNECTING;
-		//ondisconnected();
-    if (node->fd > 0)
-	{
-        close(node->fd);
-	}
-
-	aeDeleteFileEvent(global_el, node->fd, AE_READABLE);
-	aeDeleteFileEvent(global_el, node->fd, AE_WRITABLE);
-	node->fd = 0;
 }
 
 static int game_setnagleoff(int fd)
@@ -141,7 +117,7 @@ static void cb_recv_func(aeEventLoop *el, int fd, void *privdata, int mask)
 	if (ret >= 0)
 		return;
 
-	remove_listen_callback_event(client->get_listen_fd(), client);	
+	client->disconnect();
 }
 
 int send_one_buffer(conn_node_base *node, char *buffer, uint32_t len)
@@ -193,10 +169,7 @@ static void acceptTcpHandler(aeEventLoop *el, int fd, void *privdata, int mask)
     char cip[NET_IP_STR_LEN];
     UNUSED(el);
     UNUSED(mask);
-    UNUSED(privdata);
-
-	assert(listen_get_conn_maps.find(fd) != listen_get_conn_maps.end());
-	get_conn_node callback = listen_get_conn_maps[fd];
+    get_conn_node callback = (get_conn_node)(privdata);
 
     while(max--) {
         cfd = anetTcpAccept(NULL, fd, cip, sizeof(cip), &cport);
@@ -228,20 +201,16 @@ static void acceptTcpHandler(aeEventLoop *el, int fd, void *privdata, int mask)
     }
 }
 
-int game_add_listen_event(int port, get_conn_node cb1, del_conn_node cb2, const char *name)
+int game_add_listen_event(int port, get_conn_node get_node_func, const char *name)
 {
-	assert(cb1);
-	assert(cb2);	
 	int fd = anetTcpServer(NULL, port, NULL, 511);
 	anetSetBlock(fd, 0);
-	if (aeCreateFileEvent(global_el, fd, AE_READABLE, acceptTcpHandler, NULL) == AE_ERR)
+	if (aeCreateFileEvent(global_el, fd, AE_READABLE, acceptTcpHandler, (void *)get_node_func) == AE_ERR)
 	{
 		LOG_ERR("Unrecoverable error creating server.ipfd file event.\n");
 		close(fd);
 		return -1;
 	}
-	listen_get_conn_maps[fd] = cb1;
-	listen_del_conn_maps[fd] = cb2;	
 
 	LOG_INFO("%s: %s fd = %d, port = %d", __FUNCTION__, name, fd, port);
 	return (fd);
@@ -259,20 +228,19 @@ static void connect_func(aeEventLoop *el, int fd, void *privdata, int mask)
 			return;
 		}
 		if (err) {
-			remove_listen_callback_event(node->fd, node);
+			node->disconnect();
 			LOG_ERR("connect failed, err = %d", err);
 			return;
 		}
 		node->flag |= NODE_CONNECTED;
+		node->on_connected();
 
 	}
 	// TODO: 
 }
 
-int game_add_connect_event(conn_node_base *node, char *addr, int port, on_connected cb1, on_disconnected cb2)
+int game_add_connect_event(conn_node_base *node, char *addr, int port)
 {
-	assert(cb1);
-	assert(cb2);	
     int s = -1, rv;
     char portstr[6];  /* strlen("65535") + 1; */
     struct addrinfo hints, *servinfo, *p;
@@ -319,9 +287,6 @@ error:
 
 end:
     freeaddrinfo(servinfo);
-
-	connect_maps[s] = cb1;
-	disconnect_maps[s] = cb2;
 
 	node->flag = 0;
 	node->fd = s;

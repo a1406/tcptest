@@ -90,7 +90,7 @@ int main(int argc, char **argv)
 		goto done;
 	}
 
-	ret = game_add_connect_event(&game_node, (char *)"127.0.0.1", port, conn_node_gamesrv::on_connected, conn_node_gamesrv::on_disconnected);
+	ret = game_add_connect_event(&game_node, (char *)"127.0.0.1", port);
  	if (ret < 0)
 		goto done;
 	// conn_node_client::listen_fd = ret;

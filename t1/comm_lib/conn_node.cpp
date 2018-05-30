@@ -273,6 +273,34 @@ int conn_node_base::send_one_msg(PROTO_HEAD *head)
 	return send_one_buffer(this, p, len);
 }
 
+void conn_node_base::on_connected()
+{
+}
+void conn_node_base::on_disconnected()
+{
+}
+int  conn_node_base::disconnect()
+{
+	on_disconnected();
+	
+	flag |= NODE_DISCONNECTING;
+		//ondisconnected();
+    if (fd > 0)
+	{
+        close(fd);
+	}
+
+	aeDeleteFileEvent(global_el, fd, AE_READABLE);
+	aeDeleteFileEvent(global_el, fd, AE_WRITABLE);
+	fd = 0;
+	return (0);
+}
+int  conn_node_base::del()
+{
+	return (0);
+}
+
+
 // int fast_send_msg_base(conn_node_base* node, EXTERN_DATA *extern_data, uint16_t msg_id, size_t size, uint16_t seq)
 // {
 // 	if (size != (size_t)-1)

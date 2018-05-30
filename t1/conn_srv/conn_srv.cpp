@@ -89,7 +89,7 @@ int main(int argc, char **argv)
 		goto done;
 	}
 
-	ret = game_add_listen_event(port, conn_node_client::get_conn_node, conn_node_client::del_conn_node, "client");
+	ret = game_add_listen_event(port, conn_node_client::get_conn_node, "client");
  	if (ret < 0)
  		goto done;
 	conn_node_client::listen_fd = ret;

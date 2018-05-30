@@ -39,7 +39,8 @@ get_listen_fd: ?
 
 ** conn_node_base添加接口
 1. 断开连接
+2. 删除对象
 
-** 添加interface, 包含创建，删除node对象的函数
+
 
 

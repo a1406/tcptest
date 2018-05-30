@@ -174,6 +174,11 @@ public:
 	virtual int recv_func(evutil_socket_t fd) = 0;
 	virtual int send_one_msg(PROTO_HEAD *head);	
 	virtual struct event* get_write_event() { return NULL; }
+
+	virtual void on_connected();
+	virtual void on_disconnected();
+	virtual int disconnect();
+	virtual int del();
 	
 	evutil_socket_t fd;
 	uint16_t flag;
