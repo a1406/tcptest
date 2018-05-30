@@ -30,7 +30,7 @@ int cb_connsrv_timer(struct aeEventLoop *eventLoop, long long id, void *clientDa
 {
 	LOG_DEBUG("%s: id = %lld", __FUNCTION__, id);
 	printf("%s id = %lld\n", __FUNCTION__, id);
-	return (1000);
+	return (3000);
 }
 
 int main(int argc, char **argv)
@@ -81,7 +81,7 @@ int main(int argc, char **argv)
 		goto done;
 	}
 
-	line = get_first_key(file, (char *)"conn_srv_client_port");
+	line = get_first_key(file, (char *)"conn_client_port");
 	port = atoi(get_value(line));
 	if (port <= 0) {
 		LOG_ERR("config file wrong, no conn_srv_client_port");
@@ -100,7 +100,7 @@ int main(int argc, char **argv)
 		return (0);
 	}
 
-	aeCreateTimeEvent(global_el, 1000, cb_connsrv_timer, NULL, NULL);
+	aeCreateTimeEvent(global_el, 3000, cb_connsrv_timer, NULL, NULL);
 
 	aeMain(global_el);
 	aeDeleteEventLoop(global_el);
