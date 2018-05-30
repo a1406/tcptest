@@ -30,18 +30,6 @@ int game_event_init()
 	return (0);
 }
 
-//static void cb_signal(evutil_socket_t fd, short events, void *arg)
-//{
-//	LOG_DEBUG("%s: fd = %d, events = %d, arg = %p", __FUNCTION__, fd, events, arg);
-//}
-
-__attribute_used__ static void cb_timer(evutil_socket_t fd, short events, void *arg)
-{
-	LOG_DEBUG("%s: fd = %d, events = %d, arg = %p", __FUNCTION__, fd, events, arg);
-	if (arg)
-		event_free((event *)arg);
-}
-
 void remove_listen_callback_event(int listen_fd, conn_node_base *node)
 {
 	assert(listen_del_conn_maps.find(listen_fd) != listen_del_conn_maps.end());

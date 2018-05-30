@@ -26,8 +26,11 @@ int init_conn_client_map()
 	return (0);
 }
 
-void cb_connsrv_timer(evutil_socket_t, short, void* /*arg*/)
+int cb_connsrv_timer(struct aeEventLoop *eventLoop, long long id, void *clientData)
 {
+	LOG_DEBUG("%s: id = %lld", __FUNCTION__, id);
+	printf("%s id = %lld\n", __FUNCTION__, id);
+	return (1000);
 }
 
 int main(int argc, char **argv)
@@ -96,6 +99,8 @@ int main(int argc, char **argv)
 		LOG_ERR("set sigpipe ign failed");		
 		return (0);
 	}
+
+	aeCreateTimeEvent(global_el, 1000, cb_connsrv_timer, NULL, NULL);
 
 	aeMain(global_el);
 	aeDeleteEventLoop(global_el);
