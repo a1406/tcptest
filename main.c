@@ -9,18 +9,31 @@
 #include <errno.h>
 #include "ae.h"
 
-#define ADDR "127.0.0.1"
+#define ADDR "192.168.1.201"
 #define PORT 2000
+#define CLIENT_NUM 500
+#define SEND_NUM  1000000
 
 #define NODE_BLOCK 0x1
 #define NODE_CONNECTED 0x2
 #define NODE_DISCONNECTING 0x4
 #define NODE_FREEING 0x8
 #define NODE_IN_CALLBACK 0x10
+
+typedef struct st_proto_head
+{
+    uint32_t len;     //长度
+    uint16_t msg_id;  //消息ID
+    uint16_t seq;     //序号
+                      //	uint32_t crc;		//crc校验
+    char data[0];     // PROTO 内容
+} __attribute__ ((packed)) PROTO_HEAD;
+
 typedef struct conn_node
 {
 	int fd;
 	uint16_t flag;
+	int send_num;
 } CONN_NODE;
 
 int anetSetBlock(int fd, int block)
@@ -111,7 +124,6 @@ static void disconnect(aeEventLoop *el, CONN_NODE *node)
 
 static void recv_func(aeEventLoop *el, int fd, void *privdata, int mask)
 {
-	printf("recv func\n");
 	CONN_NODE *node = (CONN_NODE *)privdata;
 	if (!(node->flag & NODE_CONNECTED))
 	{
@@ -127,24 +139,44 @@ static void recv_func(aeEventLoop *el, int fd, void *privdata, int mask)
 			return;
 		}
 		node->flag |= NODE_CONNECTED;
-		printf("connect success\n");		
+//		printf("connect success\n");		
 	}
-	char buf[128];
+	char buf[256];
 	int ret = recv(fd, buf, 128, 0);
 	if (ret == 0)
 	{
 		disconnect(el, node);
 	}
-	else
+	else if (ret < 0 && errno != EAGAIN)
 	{
 		printf("recv ret[%d] %s\n", ret, buf);
+		disconnect(el, node);		
+	}
+	else
+	{
+//		PROTO_HEAD *head = (PROTO_HEAD *)buf;
+//		printf("recv len = %d, head len = %d, head buf = %s\n", ret, head->len, head->data);
 	}
 		
+}
+char global_send_buf[256];
+int global_send_len;
+static CONN_NODE global_node[CLIENT_NUM];
+
+static void	check_finished()
+{
+	int i;
+	for (i = 0; i < CLIENT_NUM; ++i)
+	{
+		if (global_node[i].send_num < SEND_NUM)
+			return;
+	}
+	printf("all finished\n");
 }
 
 static void write_func(aeEventLoop *el, int fd, void *privdata, int mask)
 {
-	printf("write func\n");
+//	printf("write func\n");
 	CONN_NODE *node = (CONN_NODE *)privdata;
 	if (!(node->flag & NODE_CONNECTED))
 	{
@@ -160,23 +192,52 @@ static void write_func(aeEventLoop *el, int fd, void *privdata, int mask)
 			return;
 		}
 		node->flag |= NODE_CONNECTED;
-		printf("connect success\n");		
-		aeDeleteFileEvent(el, fd, AE_WRITABLE);
+//		printf("connect success\n");		
+//		aeDeleteFileEvent(el, fd, AE_WRITABLE);
 	}
 
-	char buf[128];
-	int ret = write(fd, buf, 128);
+	int len = 0;
+	while (len < global_send_len)
+	{
+		int ret = write(fd, global_send_buf, global_send_len);
+		if (ret <= 0)
+		{
+			printf("write err, ret = %d\n", ret);
+			return;
+		}
+		len += ret;
+	}
+	++node->send_num;
+	if (node->send_num >= SEND_NUM)
+	{
+		aeDeleteFileEvent(el, fd, AE_WRITABLE);
+		check_finished();
+	}
 }
 
-static CONN_NODE node;
+void send_to_server(aeEventLoop *el, CONN_NODE *node)
+{
+	aeCreateFileEvent(el, node->fd, AE_WRITABLE, write_func, node);
+}
+
 int main(int argc, char *argv[])
 {
+	PROTO_HEAD *head = (PROTO_HEAD *)(&global_send_buf[0]);
+	strcpy(head->data, "tangpeilei");
+	head->len = sizeof(PROTO_HEAD) + 11;
+	global_send_len = head->len;
+	
     aeEventLoop *el = aeCreateEventLoop(65536);
 
-	node.fd = connect_server(ADDR, PORT);
-	node.flag = 0;
-	aeCreateFileEvent(el, node.fd, AE_READABLE, recv_func, &node);
-	aeCreateFileEvent(el, node.fd, AE_WRITABLE, write_func, &node);	
+	int i;
+	for (i = 0; i < CLIENT_NUM; ++i)
+	{
+		global_node[i].fd = connect_server(ADDR, PORT);
+		global_node[i].flag = 0;
+		global_node[i].send_num = 0;
+		aeCreateFileEvent(el, global_node[i].fd, AE_READABLE, recv_func, &global_node[i]);
+		aeCreateFileEvent(el, global_node[i].fd, AE_WRITABLE, write_func, &global_node[i]);
+	}
 
 	aeMain(el);
 	aeDeleteEventLoop(el);
