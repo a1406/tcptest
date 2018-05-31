@@ -1,11 +1,14 @@
+#include <map>
 #include "network.h"
 #include "conn_node_buf.h"
+
+std::map<int, CONN_NODE *> all_clients;
 
 static void recv_func(aeEventLoop *el, int fd, void *privdata, int mask)
 {
 }
 
-static void write_func(aeEventLoop *el, int fd, void *privdata, int mask)
+static void send_func(aeEventLoop *el, int fd, void *privdata, int mask)
 {
 }
 
@@ -28,6 +31,18 @@ static void acceptTcpHandler(aeEventLoop *el, int fd, void *privdata, int mask)
 //                    "Accepting client connection: %s", server.neterr);
             return;
         }
+
+		CONN_NODE *node = (CONN_NODE *)malloc(sizeof(CONN_NODE));
+		node->fd = cfd;
+		node->flag = NODE_CONNECTED;
+		node->send_buffer_begin_pos = 0;
+		node->send_buffer_end_pos = 0;
+		node->on_write = send_func;
+		node->pos_begin = node->pos_end = 0;
+		node->max_buf_len = 10 * 1024;
+		node->buf = (uint8_t *)malloc(node->max_buf_len);
+		all_clients[cfd] = node;
+		aeCreateFileEvent(el, node->fd, AE_READABLE, recv_func, node);		
 //        serverLog(LL_VERBOSE,"Accepted %s:%d", cip, cport);
 //        acceptCommonHandler(cfd,0,cip);
 		
