@@ -13,7 +13,7 @@
 #define ADDR "192.168.1.201"
 #define PORT 2000
 #define CLIENT_NUM 500
-#define SEND_NUM  100000
+#define SEND_NUM  200000
 
 #define NODE_BLOCK 0x1
 #define NODE_CONNECTED 0x2
@@ -36,6 +36,11 @@ typedef struct conn_node
 	uint16_t flag;
 	int send_num;
 } CONN_NODE;
+
+static char global_send_buf[256];
+static int global_send_len;
+static int global_reconnect_count;
+static CONN_NODE global_node[CLIENT_NUM];
 
 int anetSetBlock(int fd, int block)
 {
@@ -110,20 +115,7 @@ end:
 	return s;
 }
 
-static void disconnect(aeEventLoop *el, CONN_NODE *node)
-{
-	printf("disconnect\n");
-	node->flag |= NODE_DISCONNECTING;
-		//ondisconnected();
-    if (node->fd > 0)
-	{
-        close(node->fd);
-	}
-
-	aeDeleteFileEvent(el, node->fd, AE_READABLE);
-	aeDeleteFileEvent(el, node->fd, AE_WRITABLE);
-	node->fd = 0;
-}
+static void disconnect(aeEventLoop *el, CONN_NODE *node);
 
 static void recv_func(aeEventLoop *el, int fd, void *privdata, int mask)
 {
@@ -162,9 +154,6 @@ static void recv_func(aeEventLoop *el, int fd, void *privdata, int mask)
 	}
 		
 }
-char global_send_buf[256];
-int global_send_len;
-static CONN_NODE global_node[CLIENT_NUM];
 
 static void	check_finished()
 {
@@ -221,6 +210,30 @@ static void write_func(aeEventLoop *el, int fd, void *privdata, int mask)
 
 void send_to_server(aeEventLoop *el, CONN_NODE *node)
 {
+	aeCreateFileEvent(el, node->fd, AE_WRITABLE, write_func, node);
+}
+
+static void disconnect(aeEventLoop *el, CONN_NODE *node)
+{
+//	printf("disconnect\n");
+	node->flag |= NODE_DISCONNECTING;
+		//ondisconnected();
+    if (node->fd > 0)
+	{
+        close(node->fd);
+	}
+
+	aeDeleteFileEvent(el, node->fd, AE_READABLE);
+	aeDeleteFileEvent(el, node->fd, AE_WRITABLE);
+	node->fd = 0;
+
+	++global_reconnect_count;
+	printf("reconnect count = %d\n", global_reconnect_count);
+	
+	node->fd = connect_server(ADDR, PORT);
+	node->flag = 0;
+
+	aeCreateFileEvent(el, node->fd, AE_READABLE, recv_func, node);
 	aeCreateFileEvent(el, node->fd, AE_WRITABLE, write_func, node);
 }
 
