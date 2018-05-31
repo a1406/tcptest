@@ -22,8 +22,8 @@ static void recv_func(aeEventLoop *el, int fd, void *privdata, int mask)
 		}
 
 		if (ret < 0) {
-			printf("%s: connect closed from fd %u, err = %d\n", __PRETTY_FUNCTION__, fd, errno);
 			all_clients.erase(node->fd);
+			printf("%s: connect closed from fd %u, left client num [%u]\n", __PRETTY_FUNCTION__, fd, (int)all_clients.size());
 			disconnect(el, node);
 			return;
 		} else if (ret > 0) {
