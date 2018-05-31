@@ -116,7 +116,7 @@ int remove_one_buf(CONN_NODE *node)
 	node->pos_begin = 0;
 	node->pos_end = len;
 
-	printf("%s %d: memmove happened, len = %d\n", __PRETTY_FUNCTION__, node->fd, len);
+//	printf("%s %d: memmove happened, len = %d\n", __PRETTY_FUNCTION__, node->fd, len);
 
 	return (1);
 

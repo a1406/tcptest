@@ -41,7 +41,7 @@ static void send_func(aeEventLoop *el, int fd, void *privdata, int mask)
 	send_data_real(node);
 }
 
-#define MAX_ACCEPTS_PER_CALL 1
+#define MAX_ACCEPTS_PER_CALL 100
 #define NET_IP_STR_LEN 46 /* INET6_ADDRSTRLEN is 46, but we need to be sure */
 static void acceptTcpHandler(aeEventLoop *el, int fd, void *privdata, int mask)
 {
