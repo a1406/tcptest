@@ -55,9 +55,9 @@ aeEventLoop *aeCreateEventLoop(int setsize) {
     aeEventLoop *eventLoop;
     int i;
 
-    if ((eventLoop = zmalloc(sizeof(*eventLoop))) == NULL) goto err;
-    eventLoop->events = zmalloc(sizeof(aeFileEvent)*setsize);
-    eventLoop->fired = zmalloc(sizeof(aeFiredEvent)*setsize);
+    if ((eventLoop = (aeEventLoop *)zmalloc(sizeof(*eventLoop))) == NULL) goto err;
+    eventLoop->events = (aeFileEvent *)zmalloc(sizeof(aeFileEvent)*setsize);
+    eventLoop->fired = (aeFiredEvent *)zmalloc(sizeof(aeFiredEvent)*setsize);
     if (eventLoop->events == NULL || eventLoop->fired == NULL) goto err;
     eventLoop->setsize = setsize;
     eventLoop->lastTime = time(NULL);
@@ -102,8 +102,8 @@ int aeResizeSetSize(aeEventLoop *eventLoop, int setsize) {
     if (eventLoop->maxfd >= setsize) return AE_ERR;
     if (aeApiResize(eventLoop,setsize) == -1) return AE_ERR;
 
-    eventLoop->events = zrealloc(eventLoop->events,sizeof(aeFileEvent)*setsize);
-    eventLoop->fired = zrealloc(eventLoop->fired,sizeof(aeFiredEvent)*setsize);
+    eventLoop->events = (aeFileEvent *)zrealloc(eventLoop->events,sizeof(aeFileEvent)*setsize);
+    eventLoop->fired = (aeFiredEvent *)zrealloc(eventLoop->fired,sizeof(aeFiredEvent)*setsize);
     eventLoop->setsize = setsize;
 
     /* Make sure that if we created new slots, they are initialized with
@@ -203,7 +203,7 @@ long long aeCreateTimeEvent(aeEventLoop *eventLoop, long long milliseconds,
     long long id = eventLoop->timeEventNextId++;
     aeTimeEvent *te;
 
-    te = zmalloc(sizeof(*te));
+    te = (aeTimeEvent *)zmalloc(sizeof(*te));
     if (te == NULL) return AE_ERR;
     te->id = id;
     aeAddMillisecondsToNow(milliseconds,&te->when_sec,&te->when_ms);
@@ -491,10 +491,6 @@ void aeMain(aeEventLoop *eventLoop) {
             eventLoop->beforesleep(eventLoop);
         aeProcessEvents(eventLoop, AE_ALL_EVENTS|AE_CALL_AFTER_SLEEP);
     }
-}
-
-char *aeGetApiName(void) {
-    return aeApiName();
 }
 
 void aeSetBeforeSleepProc(aeEventLoop *eventLoop, aeBeforeSleepProc *beforesleep) {
