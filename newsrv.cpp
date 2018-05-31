@@ -2,6 +2,8 @@
 #include "network.h"
 #include "conn_node_buf.h"
 
+#define UNUSED(V) ((void) V)
+
 std::map<int, CONN_NODE *> all_clients;
 
 static void recv_func(aeEventLoop *el, int fd, void *privdata, int mask)
@@ -13,13 +15,16 @@ static void recv_func(aeEventLoop *el, int fd, void *privdata, int mask)
 		int ret = get_one_buf(node);
 		if (ret == 0) {
 			head = (PROTO_HEAD *)buf_head(node);
-			send_data(node, (char *)head, head->len);
+			int send_ret = send_data(node, (char *)head, head->len);
+			UNUSED(send_ret);
+//			printf("%d: get one buf size = %d, send ret = %d\n", node->fd, head->len, send_ret);
+			
 		}
 
 		if (ret < 0) {
-			printf("%s: connect closed from fd %u, err = %d", __PRETTY_FUNCTION__, fd, errno);
-//		send_logout_request();
-//		del_client_map_by_fd(fd, &client_maps[0], (int *)&num_client_map);
+			printf("%s: connect closed from fd %u, err = %d\n", __PRETTY_FUNCTION__, fd, errno);
+			all_clients.erase(node->fd);
+			disconnect(el, node);
 			return;
 		} else if (ret > 0) {
 			break;
@@ -36,12 +41,12 @@ static void send_func(aeEventLoop *el, int fd, void *privdata, int mask)
 	send_data_real(node);
 }
 
-#define MAX_ACCEPTS_PER_CALL 1000
+#define MAX_ACCEPTS_PER_CALL 1
 #define NET_IP_STR_LEN 46 /* INET6_ADDRSTRLEN is 46, but we need to be sure */
-#define UNUSED(V) ((void) V)
 static void acceptTcpHandler(aeEventLoop *el, int fd, void *privdata, int mask)
 {
-    int cport, cfd, max = MAX_ACCEPTS_PER_CALL;
+    int cport, cfd;
+	int max = MAX_ACCEPTS_PER_CALL;
     char cip[NET_IP_STR_LEN];
     UNUSED(el);
     UNUSED(mask);
@@ -56,6 +61,7 @@ static void acceptTcpHandler(aeEventLoop *el, int fd, void *privdata, int mask)
             return;
         }
 
+		anetSetBlock(cfd, 0);
 		CONN_NODE *node = (CONN_NODE *)malloc(sizeof(CONN_NODE));
 		node->fd = cfd;
 		node->flag = NODE_CONNECTED;
@@ -66,7 +72,9 @@ static void acceptTcpHandler(aeEventLoop *el, int fd, void *privdata, int mask)
 		node->max_buf_len = 10 * 1024;
 		node->buf = (uint8_t *)malloc(node->max_buf_len);
 		all_clients[cfd] = node;
-		aeCreateFileEvent(el, node->fd, AE_READABLE, recv_func, node);		
+		aeCreateFileEvent(el, node->fd, AE_READABLE, recv_func, node);
+
+		printf("fd %d accept from %s\n", node->fd, cip);
 //        serverLog(LL_VERBOSE,"Accepted %s:%d", cip, cport);
 //        acceptCommonHandler(cfd,0,cip);
 		
@@ -79,8 +87,11 @@ int main(int argc, char *argv[])
 	int fd = anetTcpServer(NULL, PORT, NULL, 511);
 	if (aeCreateFileEvent(el, fd, AE_READABLE, acceptTcpHandler, NULL) == AE_ERR)
 	{
-		printf("Unrecoverable error creating server.ipfd file event.");
+		printf("Unrecoverable error creating server.ipfd file event.\n");
 		return 0;
-	}	
+	}
+	aeMain(el);
+	aeDeleteEventLoop(el);
+	el = NULL;
     return 0;
 }

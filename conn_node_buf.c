@@ -44,7 +44,7 @@ int get_one_buf(CONN_NODE *node)
 		uint32_t real_len = head->len;
 
 		if (real_len < sizeof(PROTO_HEAD)) {
-			printf("[%s : %d]: get data failed, size = %d", __PRETTY_FUNCTION__, __LINE__, real_len);
+			printf("[%s : %d]: get data failed, size = %d\n", __PRETTY_FUNCTION__, __LINE__, real_len);
 			return -1;
 		}
 		return (0);
@@ -84,7 +84,7 @@ int get_one_buf(CONN_NODE *node)
 		return (0);
 	}
 
-	printf("%s %d: len not enough, len[%d], max_len [%d], buf leave: %d",	__PRETTY_FUNCTION__, node->fd, real_len, len, buf_leave(node));
+	printf("%s %d: len not enough, len[%d], max_len [%d], buf leave: %d\n",	__PRETTY_FUNCTION__, node->fd, real_len, len, buf_leave(node));
 	return (1);    //没有读完
 }
 
@@ -116,7 +116,7 @@ int remove_one_buf(CONN_NODE *node)
 	node->pos_begin = 0;
 	node->pos_end = len;
 
-	printf("%s %d: memmove happened, len = %d", __PRETTY_FUNCTION__, node->fd, len);
+	printf("%s %d: memmove happened, len = %d\n", __PRETTY_FUNCTION__, node->fd, len);
 
 	return (1);
 

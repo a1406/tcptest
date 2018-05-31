@@ -254,22 +254,19 @@ int send_data(CONN_NODE *node, char *buf, int len)
 		return -1;
 	}
 
+	if (node->send_buffer_begin_pos == node->send_buffer_end_pos)
+	{
+		if (aeCreateFileEvent(el, node->fd, AE_WRITABLE, node->on_write, node) != AE_OK)
+		{
+			return -10;			
+		}
+	}
+
 	memcpy(node->send_buffer + node->send_buffer_end_pos, buf, len);
 //	encoder_data((PROTO_HEAD*)(send_buffer+send_buffer_end_pos));
 
 	node->send_buffer_end_pos += len;
 
-	if (node->send_buffer_begin_pos == 0) {
-		if (aeCreateFileEvent(el, node->fd, AE_WRITABLE, node->on_write, node) != AE_OK)
-		{
-			return -10;			
-		}
-// 		int result = event_add(&this->ev_write, NULL);
-// 		if (0 != result) {
-// 			LOG_ERR("[%s : %d]: event add failed, result: %d", __PRETTY_FUNCTION__, __LINE__, result);
-// 			return result;
-// 		}
-	}
 	return (0);
 }
 

@@ -58,6 +58,7 @@ typedef void (*on_disconnect_func)(aeEventLoop *el, CONN_NODE *node);
 void set_disconnect_callback(on_disconnect_func func);
 
 void anetSetError(char *err, const char *fmt, ...);
+int anetSetBlock(int fd, int block);
 int connect_server(char *addr, int port);
 void disconnect(aeEventLoop *el, CONN_NODE *node);
 int anetTcp6Server(char *err, int port, char *bindaddr, int backlog);
