@@ -65,4 +65,5 @@ int anetTcpServer(char *err, int port, char *bindaddr, int backlog);
 int anetTcpAccept(char *err, int s, char *ip, size_t ip_len, int *port);
 
 int send_data(CONN_NODE *node, char *buf, int len);
+int send_data_real(CONN_NODE *node);
 #endif /* MY_NETWORK_H */

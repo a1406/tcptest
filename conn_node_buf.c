@@ -5,7 +5,7 @@ static	inline int buf_size(CONN_NODE *node)
 {
 	return node->pos_end - node->pos_begin;
 }
-static 	inline uint8_t * buf_head(CONN_NODE *node)
+uint8_t * buf_head(CONN_NODE *node)
 { 
 	return node->buf + node->pos_begin;
 }
@@ -87,3 +87,38 @@ int get_one_buf(CONN_NODE *node)
 	printf("%s %d: len not enough, len[%d], max_len [%d], buf leave: %d",	__PRETTY_FUNCTION__, node->fd, real_len, len, buf_leave(node));
 	return (1);    //没有读完
 }
+
+int remove_one_buf(CONN_NODE *node)
+{
+	PROTO_HEAD *head;
+	int buf_len;
+	int len = buf_size(node);
+	assert(len >= (int)sizeof(PROTO_HEAD));
+
+	head = (PROTO_HEAD *)buf_head(node);
+//	buf_len = ENDION_FUNC_2(head->len);
+	buf_len = head->len;
+//	msg_id = ENDION_FUNC_2(head->msg_id);
+	assert(len >= buf_len);
+
+	if (len == buf_len) {
+		node->pos_begin = node->pos_end = 0;
+		return (0);
+	}
+
+	node->pos_begin += buf_len;
+	if (is_full_packet(node)) {
+		return (0);
+	}
+
+	len = buf_size(node);
+	memmove(&node->buf[0], buf_head(node), len);
+	node->pos_begin = 0;
+	node->pos_end = len;
+
+	printf("%s %d: memmove happened, len = %d", __PRETTY_FUNCTION__, node->fd, len);
+
+	return (1);
+
+}
+

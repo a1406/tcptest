@@ -6,10 +6,34 @@ std::map<int, CONN_NODE *> all_clients;
 
 static void recv_func(aeEventLoop *el, int fd, void *privdata, int mask)
 {
+	CONN_NODE *node = (CONN_NODE *)privdata;	
+	PROTO_HEAD *head;
+
+	for (;;) {
+		int ret = get_one_buf(node);
+		if (ret == 0) {
+			head = (PROTO_HEAD *)buf_head(node);
+			send_data(node, (char *)head, head->len);
+		}
+
+		if (ret < 0) {
+			printf("%s: connect closed from fd %u, err = %d", __PRETTY_FUNCTION__, fd, errno);
+//		send_logout_request();
+//		del_client_map_by_fd(fd, &client_maps[0], (int *)&num_client_map);
+			return;
+		} else if (ret > 0) {
+			break;
+		}
+
+		ret = remove_one_buf(node);
+	}
+	return;
 }
 
 static void send_func(aeEventLoop *el, int fd, void *privdata, int mask)
 {
+	CONN_NODE *node = (CONN_NODE *)privdata;
+	send_data_real(node);
 }
 
 #define MAX_ACCEPTS_PER_CALL 1000
