@@ -1,13 +1,18 @@
 #include "network.h"
+#include <assert.h>
 
 #define ADDR "127.0.0.1"
-#define CLIENT_NUM 1
+#define CLIENT_NUM 200
 #define SEND_NUM  200000
 
 static char global_send_buf[256];
 static int global_send_len;
 static int global_reconnect_count;
 static CONN_NODE global_node[CLIENT_NUM];
+
+static char buf[1024][256];
+static int last_len[1024];
+static int _t_index[1024];
 
 static void recv_func(aeEventLoop *el, int fd, void *privdata, int mask)
 {
@@ -26,10 +31,10 @@ static void recv_func(aeEventLoop *el, int fd, void *privdata, int mask)
 			return;
 		}
 		node->flag |= NODE_CONNECTED;
+		last_len[fd] = 0;
 //		printf("connect success\n");		
 	}
-	char buf[256];
-	int ret = recv(fd, buf, 128, 0);
+	int ret = recv(fd, &(buf[fd][last_len[fd]]), 256 - last_len[fd], 0);
 	if (ret == 0)
 	{
 		disconnect(el, node);
@@ -41,8 +46,25 @@ static void recv_func(aeEventLoop *el, int fd, void *privdata, int mask)
 	}
 	else
 	{
-		PROTO_HEAD *head = (PROTO_HEAD *)buf;
-		printf("recv len = %d, head len = %d, head buf = %s\n", ret, head->len, head->data);
+		PROTO_HEAD *head = (PROTO_HEAD *)(buf[fd]);
+//		printf("recv ret = %d, len = %d, last_len = %d\n", ret, head->len, last_len[fd]);
+		
+		ret += last_len[fd];
+		if (ret < sizeof(PROTO_HEAD))
+			return;
+		
+		for (; ret >= sizeof(PROTO_HEAD) && head->len <= ret;)
+		{
+//			printf("recv len = %d, head len = %d, head buf = %s, head = %p, _t_index = %d\n", ret, head->len, head->data, head, _t_index[fd]);
+			assert(head->len == 19);
+			assert(memcmp(head->data, "tangpeilei", 10) == 0);			
+			ret -= head->len;
+			head = (PROTO_HEAD *)((char *)head + head->len);
+			++_t_index[fd];
+		}
+		memmove(buf[fd], head, ret);
+		last_len[fd] = ret;
+//		printf("memmove = %d\n", ret);
 	}
 		
 }
@@ -56,6 +78,7 @@ static void	check_finished()
 			return;
 	}
 	printf("all finished\n");
+	sleep(3);
 	exit(0);
 }
 
@@ -77,6 +100,7 @@ static void write_func(aeEventLoop *el, int fd, void *privdata, int mask)
 			return;
 		}
 		node->flag |= NODE_CONNECTED;
+		last_len[fd] = 0;		
 //		printf("connect success\n");		
 //		aeDeleteFileEvent(el, fd, AE_WRITABLE);
 	}

@@ -10,15 +10,10 @@
 
 conn_node_base::conn_node_base()
 {
-	fd = 0;
-	pos_begin = pos_end = 0;
 }
 
 conn_node_base::~conn_node_base()
 {
-	assert(buf);
-	assert(max_buf_len != 0);
-	free(buf);
 }
 
 //uint8_t conn_node_base::global_send_buf[MAX_GLOBAL_SEND_BUF + sizeof(EXTERN_DATA)];
@@ -292,9 +287,9 @@ int  conn_node_base::disconnect()
 
 	aeDeleteFileEvent(global_el, fd, AE_READABLE);
 	aeDeleteFileEvent(global_el, fd, AE_WRITABLE);
-	fd = 0;
 	
 	del();
+	fd = 0;
 	return (0);
 }
 int  conn_node_base::del()

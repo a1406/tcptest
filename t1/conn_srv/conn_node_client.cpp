@@ -106,7 +106,11 @@ int conn_node_client::recv_func(evutil_socket_t fd)
 		if (ret == 0) {
 			head = (PROTO_HEAD *)buf_head();
 
-			send_one_msg(head);
+			assert(head->len == 19);
+			assert(memcmp(head->data, "tangpeilei", 10) == 0);
+
+			if (send_one_msg(head) < 0)
+				return -1;
 
 // 			if (decode_and_check_crc(head) != 0) {
 // 				LOG_INFO("%s %d: crc err, connect closed from fd %u, err = %d", __PRETTY_FUNCTION__, __LINE__, fd, errno);

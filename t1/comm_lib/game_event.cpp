@@ -26,7 +26,7 @@ int game_event_init()
 	return (0);
 }
 
-static int game_setnagleoff(int fd)
+__attribute_used__ static int game_setnagleoff(int fd)
 {
     /* Disable the Nagle (TCP No Delay) algorithm */ 
     int flag = 1; 
