@@ -1,5 +1,6 @@
 #include "network.h"
 #include <assert.h>
+#include <signal.h>
 
 #define ADDR "127.0.0.1"
 #define CLIENT_NUM 200
@@ -147,6 +148,11 @@ int main(int argc, char *argv[])
 	head->len = sizeof(PROTO_HEAD) + 11;
 	global_send_len = head->len;
 
+	if (SIG_ERR == signal(SIGPIPE,SIG_IGN)) {
+		printf("set sigpipe ign failed\n");		
+		return (0);
+	}	
+
 	set_disconnect_callback(on_disconnect);
 	
     el = aeCreateEventLoop(65536);
@@ -162,6 +168,8 @@ int main(int argc, char *argv[])
 	}
 
 	aeMain(el);
+	printf("main exit, stop = %d\n", el->stop);
+	
 	aeDeleteEventLoop(el);
     return 0;
 }

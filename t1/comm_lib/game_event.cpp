@@ -21,6 +21,11 @@ log4c_category_t* mycat = NULL;
 
 int game_event_init()
 {
+ 	if (SIG_ERR == signal(SIGPIPE,SIG_IGN)) {
+		LOG_ERR("set sigpipe ign failed");		
+		return (-1);
+	}
+	
 	global_el = aeCreateEventLoop(65536);
 	
 	return (0);
