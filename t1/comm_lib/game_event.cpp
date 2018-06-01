@@ -53,33 +53,6 @@ static int game_cork_on(int fd)
     return 0;	
 }
 
-static int game_set_socket_opt(int fd)
-{
-	evutil_make_socket_nonblocking(fd);
-	game_setnagleoff(fd);
-
-//	int nRecvBuf=8192;
-//	setsockopt(fd,SOL_SOCKET,SO_RCVBUF,(const char*)&nRecvBuf,sizeof(int));
-//	setsockopt(fd,SOL_SOCKET,SO_SNDBUF,(const char*)&nRecvBuf,sizeof(int));
-	
-	int on = 1;
-	setsockopt(fd, SOL_SOCKET, SO_KEEPALIVE, (void*)&on, sizeof(on));
-	return (0);
-}
-
-int create_new_socket(int set_opt)
-{
-	int fd = socket(AF_INET, SOCK_STREAM, 0);
-	if (fd <= 0) {
-		LOG_ERR("%s %d: socket failed[%d]", __FUNCTION__, __LINE__, errno);		
-		return fd;
-	}
-
-	if (likely(set_opt))
-		game_set_socket_opt(fd);
-	return fd;
-}
-
 int add_timer(struct timeval t, void *arg)
 {
 	return (0);

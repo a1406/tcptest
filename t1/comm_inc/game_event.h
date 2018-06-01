@@ -49,7 +49,6 @@ typedef void (*on_connected)(conn_node_base *);
 typedef void (*on_disconnected)(conn_node_base *);
 int game_add_connect_event(conn_node_base *node, char *addr, int port);
 
-int create_new_socket(int set_opt);
 int add_timer(struct timeval t, void *arg);
 
 void init_mycat();
