@@ -8,6 +8,7 @@ add_definitions(-Wno-pointer-arith)
 
 INCLUDE_DIRECTORIES(
   "${PROJECT_SOURCE_DIR}/comm_inc"
+  "${LUA_INC}/"
   )
 
 #link_libraries(mysqlclient)
