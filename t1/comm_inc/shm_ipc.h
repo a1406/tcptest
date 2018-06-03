@@ -42,7 +42,7 @@ int write_to_shm_ipc(shm_ipc_obj *obj, PROTO_HEAD *head);
 int write_to_shm_ipc_start(shm_ipc_obj *obj, int len);
 int write_to_shm_ipc_end(shm_ipc_obj *obj, int len);
 
-typedef int (*shm_ipc_write_failed)(shm_ipc_obj *obj, PROTO_HEAD *head);
-void set_shm_ipc_write_failed(shm_ipc_write_failed *callback);
+typedef int (*shm_ipc_write_failed)(shm_ipc_obj *obj, PROTO_HEAD *head, int len);
+void set_shm_ipc_write_failed(shm_ipc_write_failed callback);
 
 #endif /* SHM_IPC_H */
