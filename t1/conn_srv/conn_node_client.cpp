@@ -112,7 +112,7 @@ int conn_node_client::recv_func(evutil_socket_t fd)
 //			PROTO_HEAD *shm_head = WRITE_DATA(ipc_game_wr);
 			if (write_to_shm_ipc(ipc_game_wr, head) != 0)
 			{
-				LOG_ERR("%s: shm ipc no mem");
+				LOG_ERR("%s: shm ipc no mem", __FUNCTION__);
 				exit(0);
 			}
 			

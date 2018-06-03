@@ -191,12 +191,14 @@ add_config(FILE *fp, char *key, char *value)
 	}
 	else
 	{
-		strncpy(line, key, key_len);
+		memcpy(line, key, key_len);
 		line[key_len] = ' ';
 		line[key_len + 1] = '=';
 		line[key_len + 2] = ' ';
-		line[key_len + 3] = '\0';
-		strncat(line, value, val_len);
+//		line[key_len + 3] = '\0';
+//		strncat(line, value, val_len);
+		line = line + key_len + 2;
+		memcpy(line, value, val_len);
 		line[key_len + val_len + 3] = '\n';
 		line[key_len + val_len + 4] = '\0';
 

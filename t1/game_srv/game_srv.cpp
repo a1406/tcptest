@@ -53,7 +53,7 @@ static void cb_recv_shm_ipcs(struct aeEventLoop *eventLoop)
 		memcpy(head->data, "good night", 10);
 		if (write_to_shm_ipc(ipc_conn_wr, head) != 0)
 		{
-			LOG_ERR("%s: shm ipc no mem");
+			LOG_ERR("%s: shm ipc no mem", __FUNCTION__);
 			exit(0);
 		}
 		

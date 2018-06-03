@@ -97,8 +97,8 @@ void try_read_reset(shm_ipc_obj *obj)
 
 static void shm_ipc_move(shm_ipc_obj *obj, PROTO_HEAD *head)
 {
-	int *p = (int *)&head->data[0];
-	LOG_DEBUG("%s: write = %u, read = %u, size = %u, data = %d", __FUNCTION__, obj->write, obj->read, head->len, *p);
+//	int *p = (int *)&head->data[0];
+//	LOG_DEBUG("%s: write = %u, read = %u, size = %u, data = %d", __FUNCTION__, obj->write, obj->read, head->len, *p);
 	
 	assert(obj->read == 0);
 	memmove(obj->data, head, head->len);
