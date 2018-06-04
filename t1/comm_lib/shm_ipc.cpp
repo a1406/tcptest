@@ -145,10 +145,20 @@ static void shm_ipc_obj_write_impl(shm_ipc_obj *obj, PROTO_HEAD *head)
 	return;
 }
 
+static shm_ipc_write_failed write_failed_callback;
+void set_shm_ipc_write_failed(shm_ipc_write_failed *callback)
+{
+	write_failed_callback = callback;
+}
+
 int write_to_shm_ipc_start(shm_ipc_obj *obj, int len)
 {
 	if (shm_ipc_obj_avaliable_size(obj) < len)
+	{
+		if (write_failed_callback)
+			return write_failed_callback(obj, head);
 		return -10;
+	}
 	return (0);	
 }
 int write_to_shm_ipc_end(shm_ipc_obj *obj, int len)
@@ -164,7 +174,11 @@ int write_to_shm_ipc_end(shm_ipc_obj *obj, int len)
 int write_to_shm_ipc(shm_ipc_obj *obj, PROTO_HEAD *head)
 {
 	if (shm_ipc_obj_avaliable_size(obj) < (int)head->len)
+	{
+		if (write_failed_callback)
+			return write_failed_callback(obj, head);
 		return -10;
+	}
 
 	PROTO_HEAD *shm_head = WRITE_DATA(obj);
 	memcpy(shm_head, head, head->len);
